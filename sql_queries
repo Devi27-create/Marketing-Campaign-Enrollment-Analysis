@@ -1,0 +1,1664 @@
+**Marketing, Learner, Opportunity, Learner Opportunity, Cohort, & Cognito dataet qureies performed on postgresql**
+
+/* =================================================================================================================================
+    Marketing Campaign table queries
+================================================================================================================================= */
+
+
+DROP TABLE IF EXISTS marketing_campaign_raw;
+
+CREATE TABLE marketing_campaign_raw (
+ad_account_name TEXT,
+campaign_name TEXT,
+delivery_status TEXT,
+delivery_level TEXT,
+reach BIGINT,
+outbound_clicks BIGINT,
+outbond_type BIGINT, -- typo from file, numeric values
+result_type TEXT,
+results BIGINT,
+cost_per_result NUMERIC(12,2),
+amount_spent_aed NUMERIC(12,2),
+cpc_cost_per_link_click NUMERIC(12,2),
+reporting_starts DATE
+);
+
+
+/* -------------------------------------------------------------------------------------------------------------------------------
+ [OVERVIEW OF THE TABLE]
+------------------------------------------------------------------------------------------------------------------------------- */
+
+ 
+SELECT COUNT(*) FROM marketing_campaign_raw; -- 141 RECORDS
+ 
+SELECT * FROM marketing_campaign_raw;
+ 
+ /* -------------------------------------------------------------------------------------------------------------------------------
+ STEP 1- DATA PROFILING (PostgreSQL)
+ Checks: Row count, Nulls per column, Duplicates, Basic stats
+ ------------------------------------------------------------------------------------------------------------------------------- */
+ 
+ -- 1. Row count
+ SELECT COUNT(*) AS total_rows
+ FROM marketing_campaign_raw; -- 141 RECORDS
+ 
+ -- 2. Null counts per column (cast to text to avoid type mismatch)
+SELECT
+ column_name,
+ COUNT(*) FILTER (WHERE t.column_val IS NULL OR t.column_val = '') AS null_count
+ FROM marketing_campaign_raw
+ CROSS JOIN LATERAL (VALUES
+ ('ad_account_name', ad_account_name::TEXT),
+ ('campaign_name', campaign_name::TEXT),
+ ('delivery_status', delivery_status::TEXT),
+ ('delivery_level', delivery_level::TEXT),
+ ('reach', reach::TEXT),
+ ('outbound_clicks', outbound_clicks::TEXT),
+ ('outbond_type', outbond_type::TEXT),
+ ('result_type', result_type::TEXT),
+ ('results', results::TEXT),
+ ('cost_per_result', cost_per_result::TEXT),
+ ('amount_spent_aed', amount_spent_aed::TEXT),
+ ('cpc_cost_per_link_click', cpc_cost_per_link_click::TEXT),
+ ('reporting_starts', reporting_starts::TEXT)
+ ) AS t(column_name, column_val)
+GROUP BY column_name
+ORDER BY null_count DESC;
+
+--"outbond_type" FOUND 2 NULL
+--"outbound_clicks"	FOUND 2 NULL
+--"cpc_cost_per_link_click"	FOUND 2 NULL 
+--"campaign_name" FOUND	2 NULL
+--"results"	FOUND 0 NULL
+--"reporting_starts" FOUND 0 NULL
+--"reach" FOUND 0 NULL
+--"amount_spent_aed" FOUND 0 NULL
+--"delivery_status"	FOUND 0 NULL
+--"ad_account_name"	FOUND 0 NULL
+--"result_type"	FOUND 0 NULL
+--"cost_per_result"	FOUND 0 NULL
+--"delivery_level"	FOUND 0 NULL
+
+ 
+ 
+-- 3. Duplicate check
+-- Assuming ad_account_name + campaign_name + reporting_starts should be unique
+ 
+SELECT
+ad_account_name, campaign_name, reporting_starts,
+COUNT(*) AS dup_count
+FROM marketing_campaign_raw
+GROUP BY ad_account_name, campaign_name, reporting_starts
+HAVING COUNT(*) > 1;
+ 
+SELECT
+ad_account_name,
+COUNT(*) AS dup_count
+FROM marketing_campaign_raw
+GROUP BY ad_account_name
+HAVING COUNT(*) > 1;
+-- "Brand Awareness" FOUND 26 Duplicates
+-- "SLU" FOUND 91 Duplicates
+-- "RIT" FOUND 24 Duplicates
+ 
+SELECT
+ campaign_name,
+ COUNT(*) AS dup_count
+ FROM marketing_campaign_raw
+ GROUP BY campaign_name
+ HAVING COUNT(*) > 1;
+-- [null] found 2 duplicates
+-- "EVENT: Social Impact Initiative" found 2 duplicates
+-- "Digital Marketing Intern "	found 2 duplicates
+-- "Dec | Materclasses | Block Chain Essentials Masterclass"	found 2 duplicates
+-- "AeroFlow Challenge"	found 2 duplicates
+-- "Project Management Associate Intern "	found 2 duplicates
+ 
+ 
+SELECT
+reporting_starts,
+COUNT(*) AS dup_count
+FROM marketing_campaign_raw
+GROUP BY reporting_starts
+HAVING COUNT(*) > 1;
+-- had 141 duplicates for "2023-01-01"	reporting_starts
+ 
+-- Basic descriptive statistics for numeric columns
+
+SELECT
+'reach' AS column_name,
+MIN(reach) AS min_val,
+MAX(reach) AS max_val,
+AVG(reach) AS avg_val,
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY reach) AS median_val,
+STDDEV_POP(reach) AS stddev_val
+FROM marketing_campaign_raw
+UNION ALL
+SELECT
+'outbound_clicks', 
+MIN(outbound_clicks), 
+MAX(outbound_clicks), 
+AVG(outbound_clicks),
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY outbound_clicks),
+STDDEV_POP(outbound_clicks)
+FROM marketing_campaign_raw
+UNION ALL
+SELECT
+'outbond_type', 
+MIN(outbond_type), 
+MAX(outbond_type), 
+AVG(outbond_type),
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY outbond_type),
+STDDEV_POP(outbond_type)
+FROM marketing_campaign_raw
+UNION ALL
+SELECT
+'results', 
+MIN(results), 
+MAX(results), 
+AVG(results),
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY results),
+STDDEV_POP(results)
+FROM marketing_campaign_raw
+UNION ALL
+SELECT
+'cost_per_result', 
+MIN(cost_per_result), 
+MAX(cost_per_result), 
+AVG(cost_per_result),
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY cost_per_result),
+STDDEV_POP(cost_per_result)
+FROM marketing_campaign_raw
+UNION ALL
+SELECT
+'cpc_cost_per_link_click', 
+MIN(cpc_cost_per_link_click), 
+MAX(cpc_cost_per_link_click), 
+AVG(cpc_cost_per_link_click),
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY cpc_cost_per_link_click),
+STDDEV_POP(cpc_cost_per_link_click)
+FROM marketing_campaign_raw;
+
+ 
+
+ -- IQR-based outlier detection
+WITH stats AS (
+SELECT
+PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY reach) AS q1_reach,
+PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY reach) AS q3_reach,
+PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY outbound_clicks) AS q1_outbound_clicks,
+PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY outbound_clicks) AS q3_outbound_clicks,
+PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY results) AS q1_results,
+PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY results) AS q3_results,
+PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY cost_per_result) AS q1_cpr,
+PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY cost_per_result) AS q3_cpr,
+PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY cpc_cost_per_link_click) AS q1_cpc,
+PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY cpc_cost_per_link_click) AS q3_cpc
+FROM marketing_campaign_raw
+)
+SELECT
+SUM(CASE WHEN reach < q1_reach- 1.5 * (q3_reach- q1_reach) THEN 1
+WHEN reach > q3_reach + 1.5 * (q3_reach- q1_reach) THEN 1 ELSE 0 END) AS reach_outliers,
+SUM(CASE WHEN outbound_clicks < q1_outbound_clicks- 1.5 * (q3_outbound_clicks- q1_outbound_clicks) THEN 1
+WHEN outbound_clicks > q3_outbound_clicks + 1.5 * (q3_outbound_clicks- q1_outbound_clicks) THEN 1 ELSE 0 END) AS outbound_clicks_outliers,
+SUM(CASE WHEN results < q1_results- 1.5 * (q3_results- q1_results) THEN 1
+WHEN results > q3_results + 1.5 * (q3_results- q1_results) THEN 1 ELSE 0 END) AS results_outliers,
+SUM(CASE WHEN cost_per_result < q1_cpr- 1.5 * (q3_cpr- q1_cpr) THEN 1
+WHEN cost_per_result > q3_cpr + 1.5 * (q3_cpr- q1_cpr) THEN 1 ELSE 0 END) AS cost_per_result_outliers,
+SUM(CASE WHEN cpc_cost_per_link_click < q1_cpc- 1.5 * (q3_cpc- q1_cpc) THEN 1
+WHEN cpc_cost_per_link_click > q3_cpc + 1.5 * (q3_cpc- q1_cpc) THEN 1 ELSE 0 END) AS cpc_outliers
+FROM marketing_campaign_raw, stats;
+
+-- reach has 26 outliers
+-- coutbound_clicks had 19 outliers
+-- resuts has 24 outliers
+-- cost_per_result has 5
+-- cpc has 9
+
+ 
+/* -------------------------------------------------------------------------------------------------------------------------------
+ STEP 2- CLEANING & TRANSFORMATION
+ Create marketing_campaign_clean from marketing_campaign_raw
+-------------------------------------------------------------------------------------------------------------------------------= */
+ 
+DROP TABLE IF EXISTS marketing_campaign_clean;
+ 
+CREATE TABLE marketing_campaign_clean AS
+WITH ranked AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY ad_account_name, campaign_name, reporting_starts
+            ORDER BY reporting_starts DESC
+        ) AS rn
+    FROM marketing_campaign_raw
+)
+SELECT
+    ad_account_name,
+    campaign_name,
+    INITCAP(TRIM(delivery_status)) AS delivery_status,
+    INITCAP(TRIM(delivery_level)) AS delivery_level,
+    COALESCE(reach, 0) AS reach,
+    COALESCE(outbound_clicks, 0) AS outbound_clicks,
+    outbond_type,
+    INITCAP(TRIM(result_type)) AS result_type,
+    COALESCE(results, 0) AS results,
+    cost_per_result,
+    amount_spent_aed,
+    cpc_cost_per_link_click,
+    reporting_starts,
+
+    -- Null flags
+    CASE WHEN reach IS NULL THEN 1 ELSE 0 END AS flag_null_reach,
+    CASE WHEN outbound_clicks IS NULL THEN 1 ELSE 0 END AS flag_null_outbound_clicks,
+    CASE WHEN results IS NULL THEN 1 ELSE 0 END AS flag_null_results,
+
+    -- Outlier flags (IQR method)
+    CASE
+        WHEN reach < q_reach.q1 - 1.5 * (q_reach.q3 - q_reach.q1)
+          OR reach > q_reach.q3 + 1.5 * (q_reach.q3 - q_reach.q1)
+        THEN 1 ELSE 0
+    END AS flag_outlier_reach,
+
+    CASE
+        WHEN outbound_clicks < q_clicks.q1 - 1.5 * (q_clicks.q3 - q_clicks.q1)
+          OR outbound_clicks > q_clicks.q3 + 1.5 * (q_clicks.q3 - q_clicks.q1)
+        THEN 1 ELSE 0
+    END AS flag_outlier_outbound_clicks
+FROM ranked
+
+-- Join IQR stats for outlier detection
+CROSS JOIN (
+    SELECT
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY reach) AS q1,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY reach) AS q3
+    FROM marketing_campaign_raw
+) q_reach
+CROSS JOIN (
+    SELECT
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY outbound_clicks) AS q1,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY outbound_clicks) AS q3
+    FROM marketing_campaign_raw
+) q_clicks
+
+WHERE rn = 1;  -- keep only latest per group if want to keep all records in the clean table then we can just remove 'WHERE rn = 1' from the query.
+
+
+-- Preview cleaned dataset
+ SELECT * FROM marketing_campaign_clean;
+
+
+ 
+ /* -------------------------------------------------------------------------------------------------------------------------------
+ STEP 3- DATA QUALITY REPORT
+------------------------------------------------------------------------------------------------------------------------------- */
+ -- 1. Row Counts
+ 
+ SELECT
+ (SELECT COUNT(*) FROM marketing_campaign_raw) AS raw_count,
+ (SELECT COUNT(*) FROM marketing_campaign_clean) AS clean_count;
+
+ -- raw_count is 141 where clean count is 137 as it contains only latest records per group
+
+ 
+ -- 2. Duplicates check (should be zero after cleaning)
+ 
+ SELECT ad_account_name, campaign_name, reporting_starts, COUNT(*)
+ FROM marketing_campaign_clean
+ GROUP BY ad_account_name, campaign_name, reporting_starts
+ HAVING COUNT(*) > 1;
+ -- 0 duplicates found after cleaning
+
+ 
+ -- 3. Missing values by column
+ 
+ SELECT
+ SUM(CASE WHEN reach IS NULL THEN 1 ELSE 0 END) AS null_reach,
+ SUM(CASE WHEN outbound_clicks IS NULL THEN 1 ELSE 0 END) AS null_outbound_clicks,
+ SUM(CASE WHEN results IS NULL THEN 1 ELSE 0 END) AS null_results,
+ SUM(CASE WHEN cost_per_result IS NULL THEN 1 ELSE 0 END) AS null_cost_per_result
+ FROM marketing_campaign_clean;
+ -- found 0 missing values
+ 
+ -- 4. Outlier counts (based on flags created in cleaning step)
+ 
+ SELECT
+ SUM(flag_outlier_reach) AS outliers_reach,
+ SUM(flag_outlier_outbound_clicks) AS outliers_outbound_clicks
+ FROM marketing_campaign_clean;
+--outliers_reach "26" outliers_outbound_clicks "17"
+ 
+ -- 5. Summary statistics for key numeric fields
+ 
+ SELECT
+ 'reach' AS metric,
+ MIN(reach) AS min_val,
+ MAX(reach) AS max_val,
+ AVG(reach) AS avg_val,
+ PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY reach) AS median_val
+ FROM marketing_campaign_clean
+ UNION ALL
+ SELECT
+ 'outbound_clicks',
+ MIN(outbound_clicks),
+ MAX(outbound_clicks),
+ AVG(outbound_clicks),
+ PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY outbound_clicks)
+ FROM marketing_campaign_clean
+ UNION ALL
+ SELECT
+ 'results',
+ MIN(results),
+ MAX(results),
+ AVG(results),
+ PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY results)
+ FROM marketing_campaign_clean;
+ 
+
+ SELECT * FROM marketing_campaign_clean;
+
+ 
+/* ================================================================================================================================
+ Leaner Opportunity table queries
+================================================================================================================================ */
+
+DROP TABLE IF EXISTS learner_opportunity_raw;
+
+/* -------------------------------------------------------------------------------------------------------------------------------
+	Create RAW table (structure matches source data)
+------------------------------------------------------------------------------------------------------------------------------- */
+
+CREATE TABLE learner_opportunity_raw (
+enrollment_id TEXT,
+learner_id TEXT,
+assigned_cohort TEXT,
+apply_date TIMESTAMP,
+status INT
+);
+
+
+SELECT * FROM learner_opportunity_raw
+
+/* -------------------------------------------------------------------------------------------------------------------------------
+	Inspect RAW data for quality issues
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+-- Missing values check
+ 
+SELECT
+ COUNT(*) FILTER (WHERE enrollment_id IS NULL) AS enrollment_id_nulls,
+ COUNT(*) FILTER (WHERE learner_id IS NULL) AS learner_id_nulls,
+ COUNT(*) FILTER (WHERE assigned_cohort IS NULL) AS assigned_cohort_nulls,
+ COUNT(*) FILTER (WHERE apply_date IS NULL) AS apply_date_nulls,
+ COUNT(*) FILTER (WHERE status IS NULL) AS status_nulls
+ FROM learner_opportunity_raw;
+-- enrollment_id has '0' null
+-- learner_id has '0' null
+-- assigned_cohort has '13318' null
+-- apply_date has '188' null
+-- status has '186' null
+
+
+-- Duplicate enrollment_id check
+SELECT enrollment_id, COUNT(*) AS row_count
+FROM learner_opportunity_raw
+GROUP BY enrollment_id
+HAVING COUNT(*) > 1
+ORDER BY row_count DESC;
+
+-- Conflicting values within same enrollment_id
+SELECT enrollment_id
+FROM learner_opportunity_raw
+GROUP BY enrollment_id
+HAVING COUNT(DISTINCT learner_id) > 1
+OR COUNT(DISTINCT assigned_cohort) > 1
+OR COUNT(DISTINCT status) > 1;
+
+/* ------------------------------------------------------------------------------------------------------------------------------
+	CREATE CLEAN TABLE FROM RAW (NO RAW UPDATES)
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+DROP TABLE IF EXISTS learner_opportunity_clean;
+
+CREATE TABLE learner_opportunity_clean AS
+WITH ranked AS (
+    SELECT *,
+           ROW_NUMBER() OVER (
+               PARTITION BY enrollment_id
+               ORDER BY apply_date DESC NULLS LAST
+           ) AS rn
+    FROM learner_opportunity_raw
+)
+SELECT
+    enrollment_id,
+    learner_id,
+    TRIM(assigned_cohort) AS assigned_cohort,
+    apply_date::DATE AS apply_date,
+    status,
+    UPPER(CASE
+        WHEN assigned_cohort IS NULL OR assigned_cohort NOT IN (SELECT cohort_code FROM cohort_etl_clean)
+        THEN 'true'
+        ELSE 'false'
+    END) AS is_unknown_flag
+FROM ranked
+WHERE rn = 1;
+
+--TABLE VIEW
+SELECT * FROM learner_opportunity_clean;
+
+
+-- Adding foreign key and altering the table datatypes
+
+ALTER TABLE learner_opportunity_clean
+ADD CONSTRAINT fk_learner_id
+FOREIGN KEY (learner_id)
+REFERENCES opportunity_clean(opportunity_id);
+
+ALTER TABLE Learner_Opportunity_clean
+ADD CONSTRAINT fk_assigned_cohort
+FOREIGN KEY (Assigned_Cohort)
+REFERENCES Cohort_ETL_clean(Cohort_Code);
+
+ALTER TABLE Learner_Opportunity_clean
+ALTER COLUMN Assigned_Cohort TYPE VARCHAR(50);
+
+
+/* -------------------------------------------------------------------------------------------------------------------------------
+	Optional: Verify clean table
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+-- Check that enrollment_id is now unique
+SELECT COUNT(DISTINCT enrollment_id) AS distinct_ids,
+COUNT(*) AS total_rows
+FROM learner_opportunity_clean;
+
+-- Spot check sample
+SELECT * FROM learner_opportunity_clean LIMIT 20;
+ 
+SELECT enrollment_id, COUNT(*) AS record_count
+FROM learner_opportunity_clean
+GROUP BY enrollment_id
+HAVING COUNT(*) > 1
+ORDER BY record_count DESC;
+ 
+SELECT *
+FROM learner_opportunity_clean
+WHERE enrollment_id = 'Learner#243da79d-ba07-43aa-af7c-1de782937199'
+ORDER BY apply_date;
+
+-- checking how many duplicates have changes
+SELECT enrollment_id,
+COUNT(DISTINCT learner_id) AS learner_variants,
+COUNT(DISTINCT assigned_cohort) AS cohort_variants,
+COUNT(DISTINCT status) AS status_variants
+FROM learner_opportunity_clean
+GROUP BY enrollment_id
+HAVING COUNT(*) > 1;
+
+-- [CHECKING DUPLICATES PER COLUMN]
+select enrollment_id, learner_id, assigned_cohort, apply_date, status, count(*)
+from learner_opportunity_clean
+group by enrollment_id, learner_id, assigned_cohort, apply_date, status
+having count(*)> 1;
+ 
+
+/* -------------------------------------------------------------------------------------------------------------------------------
+	DUPLICATE HISTORY DETECTION WITH THE CLEAN DATA
+------------------------------------------------------------------------------------------------------------------------------- */
+
+-- Find enrollment_ids that have conflicting values across columns
+-- RAW DATA
+SELECT enrollment_id,
+COUNT(*) AS total_rows,
+COUNT(DISTINCT learner_id) AS distinct_learners,
+COUNT(DISTINCT assigned_cohort) AS distinct_cohorts,
+COUNT(DISTINCT status) AS distinct_statuses
+FROM learner_opportunity_raw
+GROUP BY enrollment_id
+HAVING COUNT(*) > 1;
+
+--CLEAN DATA
+SELECT enrollment_id,
+COUNT(*) AS total_rows,
+COUNT(DISTINCT learner_id) AS distinct_learners,
+COUNT(DISTINCT assigned_cohort) AS distinct_cohorts,
+COUNT(DISTINCT status) AS distinct_statuses
+FROM learner_opportunity_clean
+GROUP BY enrollment_id
+HAVING COUNT(*) > 1;
+
+-- Preview details for duplicates
+SELECT *
+FROM learner_opportunity_raw
+WHERE enrollment_id IN (
+SELECT enrollment_id
+FROM learner_opportunity_raw
+GROUP BY enrollment_id
+HAVING COUNT(*) > 1
+)
+ORDER BY enrollment_id, apply_date NULLS LAST;
+
+SELECT *
+FROM learner_opportunity_clean
+WHERE enrollment_id IN (
+SELECT enrollment_id
+FROM learner_opportunity_clean
+GROUP BY enrollment_id
+HAVING COUNT(*) > 1
+)
+ORDER BY enrollment_id, apply_date NULLS LAST; -- 0 nulls
+
+
+/* --------------------------------------------------------------------------------------------------------------------------------
+	OUTLIER DETECTION
+------------------------------------------------------------------------------------------------------------------------------- */
+ 
+-- 3 Standard Deviations
+SELECT *
+FROM learner_opportunity_clean
+WHERE status > (SELECT AVG(status) + 3 * STDDEV(status) FROM learner_opportunity_clean)
+OR status < (SELECT AVG(status)- 3 * STDDEV(status) FROM learner_opportunity_clean);
+
+-- IQR Method
+WITH quartiles AS (
+SELECT
+PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY status) AS Q1,
+PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY status) AS Q3
+FROM learner_opportunity_raw
+),
+iqr_calc AS (
+SELECT Q1, Q3, (Q3- Q1) AS IQR
+FROM quartiles
+)
+SELECT r.*,
+i.Q1, i.Q3, i.IQR,
+CASE
+WHEN r.status < (i.Q1- 1.5 * i.IQR) THEN 'Low Outlier'
+WHEN r.status > (i.Q3 + 1.5 * i.IQR) THEN 'High Outlier'
+ELSE 'Normal'
+END AS outlier_flag
+FROM learner_opportunity_raw r
+CROSS JOIN iqr_calc i
+WHERE r.status IS NOT NULL;--counting the outliers outside normal range
+WITH quartiles AS (
+SELECT
+PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY status) AS Q1,
+PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY status) AS Q3
+FROM learner_opportunity_clean
+),
+iqr_calc AS (
+SELECT Q1, Q3, (Q3- Q1) AS IQR FROM quartiles
+)
+SELECT
+COUNT(*) FILTER (
+WHERE status > (Q3 + 1.5 * IQR)
+) AS high_outliers,
+COUNT(*) FILTER (
+WHERE status < (Q1- 1.5 * IQR)
+) AS low_outliers
+FROM learner_opportunity_clean, iqr_calc;
+
+-- high outliers "3742" and low outliers "12736"
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+	VERIFICATION CHECKS
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+-- Confirm uniqueness
+SELECT COUNT(DISTINCT enrollment_id) AS distinct_ids,
+COUNT(*) AS total_rows
+FROM learner_opportunity_clean;
+ 
+-- Check null counts
+SELECT
+COUNT(*) FILTER (WHERE enrollment_id IS NULL) AS null_cohort,
+COUNT(*) FILTER (WHERE learner_id IS NULL) AS null_cohort,
+COUNT(*) FILTER (WHERE assigned_cohort IS NULL) AS null_cohort,
+COUNT(*) FILTER (WHERE apply_date IS NULL) AS null_apply_date,
+COUNT(*) FILTER (WHERE status IS NULL) AS null_status
+FROM learner_opportunity_clean;
+ 
+-- Quick sample
+SELECT * FROM learner_opportunity_clean LIMIT 20;
+
+
+
+/* ============================================================================================================================================
+ Opportunity table queries
+============================================================================================================================================ */
+
+
+DROP TABLE opportunity_raw CASCADE;
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[TABLE CREATION BASED ON CSV STRUCTURE]
+-------------------------------------------------------------------------------------------------------------------------------*/
+ 
+CREATE TABLE opportunity_raw(
+opportunity_id TEXT,
+opportunity_name TEXT,
+category VARCHAR(50),
+opportunity_code VARCHAR(50),
+tracking_questions TEXT
+);
+ 
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[OVERVIEW OF THE TABLE]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+SELECT * FROM opportunity_raw;
+ 
+-- Row count
+ 
+SELECT COUNT(*) FROM opportunity_raw; --187 row count
+ 
+ 
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[CHECKING DATA TYPES & MISSING/NULL VALUES]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+-- Check data types from system catalog
+SELECT *, data_type
+FROM information_schema.columns
+WHERE table_name = 'opportunity_raw';
+ 
+ -- Missing values per column
+SELECT
+ COUNT(*) AS total_rows,
+ COUNT(*) FILTER (WHERE opportunity_id IS NULL) AS opportunity_id_nulls,
+ COUNT(*) FILTER (WHERE opportunity_id = '') AS opportunity_id_empty,
+ COUNT(*) FILTER (WHERE opportunity_id ILIKE 'NULL') AS opportunity_id_literal_null,
+ COUNT(*) FILTER (WHERE opportunity_name IS NULL) AS opportunity_name_nulls,
+ COUNT(*) FILTER (WHERE opportunity_name = '') AS opportunity_name_empty,
+ COUNT(*) FILTER (WHERE opportunity_name ILIKE 'NULL') AS opportunity_name_literal_null ,
+ COUNT(*) FILTER (WHERE category IS NULL) AS category_nulls,
+ COUNT(*) FILTER (WHERE category = '') AS category_empty,
+ COUNT(*) FILTER (WHERE category ILIKE 'NULL') AS category_literal_null,
+ COUNT(*) FILTER (WHERE opportunity_code IS NULL) AS opportunity_code_nulls,
+ COUNT(*) FILTER (WHERE opportunity_code = '') AS opportunity_code_empty,
+ COUNT(*) FILTER (WHERE opportunity_code ILIKE 'NULL') AS opportunity_code_literal_null ,
+ COUNT(*) FILTER (WHERE tracking_questions IS NULL) AS tracking_questions_nulls,
+ COUNT(*) FILTER (WHERE tracking_questions = '') AS tracking_questions_empty,
+ COUNT(*) FILTER (WHERE tracking_questions ILIKE 'NULL') AS tracking_questions_literal_null
+ FROM opportunity_raw;
+ 
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[CHECKING DUPLICATES]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+-- Check duplicates per row
+SELECT opportunity_id, opportunity_name, category, opportunity_code, tracking_questions, COUNT(*)
+FROM opportunity_raw
+GROUP BY opportunity_id, opportunity_name, category, opportunity_code, tracking_questions
+HAVING COUNT(*) > 1;
+
+-- Duplicates by opportunity_id
+SELECT opportunity_id, COUNT(*)
+FROM opportunity_raw
+GROUP BY opportunity_id
+HAVING COUNT(*) > 1;
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[CREATING A CLEAN TABLE]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+DROP TABLE IF EXISTS opportunity_clean;
+ 
+CREATE TABLE opportunity_clean AS
+WITH ranked AS (
+SELECT *,
+ROW_NUMBER() OVER (
+PARTITION BY opportunity_id
+ORDER BY opportunity_name NULLS LAST
+) AS rn
+FROM opportunity_raw
+)
+SELECT
+opportunity_id,
+COALESCE(opportunity_name, 'Unknown') AS
+opportunity_name,
+COALESCE(category, 'Unknown') AS category, opportunity_code,
+CASE
+ WHEN tracking_questions ILIKE 'NULL' OR
+ tracking_questions = '' THEN NULL
+ ELSE tracking_questions
+ END AS tracking_questions
+ FROM ranked
+ WHERE rn = 1;
+
+
+-- ADDING PRIMARY KEY
+ALTER TABLE opportunity_clean
+ADD CONSTRAINT pk_opportunity PRIMARY KEY (opportunity_id);
+
+ 
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[CHECKING CLEAN TABLE]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+ -- Missing values in clean table
+SELECT
+COUNT(*) FILTER (WHERE opportunity_id IS NULL) AS opportunity_id_nulls,
+COUNT(*) FILTER (WHERE opportunity_name IS NULL) AS opportunity_name_nulls,
+COUNT(*) FILTER (WHERE category IS NULL) AS category_nulls,
+COUNT(*) FILTER (WHERE opportunity_code IS NULL) AS opportunity_code_nulls,
+COUNT(*) FILTER (WHERE tracking_questions IS NULL) AS tracking_questions_nulls,
+COUNT(*) AS total_rows
+FROM opportunity_clean;
+ 
+ -- Percentage of missing values
+SELECT
+ROUND(100.0 * COUNT(*) FILTER (WHERE opportunity_id IS NULL) / COUNT(*), 2) AS pct_opportunity_id_nulls,
+ROUND(100.0 * COUNT(*) FILTER (WHERE opportunity_name IS NULL) / COUNT(*), 2) AS pct_opportunity_name_nulls,
+ROUND(100.0 * COUNT(*) FILTER (WHERE category IS NULL) / COUNT(*), 2) AS pct_category_nulls,
+ROUND(100.0 * COUNT(*) FILTER (WHERE opportunity_code IS NULL) / COUNT(*), 2) AS pct_opportunity_code_nulls,
+ROUND(100.0 * COUNT(*) FILTER (WHERE tracking_questions IS NULL) / COUNT(*), 2) AS pct_tracking_questions_nulls --36.90% nulls
+FROM opportunity_clean;
+ 
+
+-- Preview tables raw and clean
+SELECT * FROM opportunity_raw;
+
+SELECT * FROM opportunity_clean;
+
+-- Frequency distribution for categorical columns
+
+SELECT opportunity_id, COUNT(*) AS freq
+FROM opportunity_raw
+GROUP BY opportunity_id
+ORDER BY freq DESC;
+ 
+SELECT opportunity_name, COUNT(*) AS freq
+FROM opportunity_raw
+GROUP BY opportunity_name
+ORDER BY freq DESC;
+ 
+SELECT category, COUNT(*) AS freq
+FROM opportunity_raw
+GROUP BY category
+ORDER BY freq DESC;
+ 
+SELECT opportunity_code, COUNT(*) AS freq
+FROM opportunity_raw
+GROUP BY opportunity_code
+ORDER BY freq DESC;
+
+SELECT tracking_questions, COUNT(*) AS freq
+FROM opportunity_raw
+GROUP BY tracking_questions
+ORDER BY freq DESC
+
+
+
+/* ============================================================================================================================================
+-- Learner table queries
+============================================================================================================================================ */
+
+
+DROP TABLE IF EXISTS learner_raw;
+
+/* -------------------------------------------------------------------------------------------------------------------------------------------
+	Create RAW table (structure matches source data)
+------------------------------------------------------------------------------------------------------------------------------------------- */
+CREATE TABLE learner_raw (
+learner_id TEXT,-- likely unique identifier
+country Varchar(50),
+degree Varchar(100),
+institution TEXT,
+major TEXT
+);
+
+/* -------------------------------------------------------------------------------------------------------------------------------------------
+	Create RAW table (structure matches source data)
+-------------------------------------------------------------------------------------------------------------------------------------------*/
+
+SELECT * FROM learner_raw LIMIT 10;
+
+ -- Row count
+SELECT COUNT(*) FROM learner_raw;   -- returns 129259
+ 
+
+ -- Missing Values per Column
+
+ SELECT
+ COUNT(*) FILTER (WHERE learner_id IS NULL) AS missing_learner_id, -- 0 missing values in learner_id 
+ COUNT(*) FILTER (WHERE country IS NULL) AS missing_country,-- 2275 missing values in country
+ COUNT(*) FILTER (WHERE degree IS NULL) AS missing_degree,-- 52693 missing values in degree
+ COUNT(*) FILTER (WHERE institution IS NULL) AS missing_institution,-- 52693 missing values in institution
+ COUNT(*) FILTER (WHERE major IS NULL) AS missing_major -- 52694 missing values in major
+ FROM learner_raw;
+
+ 
+ -- catch fake nulls
+ SELECT
+ COUNT(*) FILTER (WHERE learner_id ILIKE 'null' OR learner_id IS NULL) AS missing_learner_id,
+ COUNT(*) FILTER (WHERE country ILIKE 'null' OR country IS NULL) AS missing_country,
+ COUNT(*) FILTER (WHERE degree ILIKE 'null' OR degree IS NULL) AS missing_degree,
+ COUNT(*) FILTER (WHERE institution ILIKE 'null' OR institution IS NULL) AS missing_institution,
+ COUNT(*) FILTER (WHERE major ILIKE 'null' OR major IS NULL) AS missing_major
+ FROM learner_raw;
+-- found the same  values as in the missing column
+ 
+ SELECT DISTINCT country FROM learner_raw ORDER BY country; -- 191 distinct country
+ 
+ SELECT DISTINCT degree FROM learner_raw ORDER BY degree; -- 8 distinct degree
+ 
+ 
+ 
+/* -------------------------------------------------------------------------------------------------------------------------------------------
+	 Cleaning + Loading
+-------------------------------------------------------------------------------------------------------------------------------------------= */
+
+-- (1) Create the clean table
+ 
+DROP TABLE IF EXISTS learner_clean;
+ 
+CREATE TABLE learner_clean AS
+SELECT DISTINCT ON (learner_id)
+NULLIF(TRIM(learner_id), 'NULL') AS learner_id,
+COALESCE(INITCAP(NULLIF(TRIM(country), 'NULL')), 'Unknown') AS country,
+COALESCE(INITCAP(NULLIF(TRIM(degree), 'NULL')), 'Unknown') AS degree,
+COALESCE(INITCAP(NULLIF(TRIM(institution), 'NULL')), 'Unknown') AS institution,
+COALESCE(INITCAP(NULLIF(TRIM(major), 'NULL')), 'Unknown') AS major
+FROM learner_raw;
+ 
+-- Add Primary Key Constraint
+ALTER TABLE learner_clean
+ADD CONSTRAINT pk_learner PRIMARY KEY (learner_id);
+
+
+ 
+-- (2) Remove duplicates by keeping only the first occurrence
+DELETE FROM learner_clean a
+USING learner_clean b
+WHERE a.ctid < b.ctid
+AND a.learner_id = b.learner_id;
+-- delete 0
+ 
+-- (3) Duplicate check
+SELECT learner_id, COUNT(*) AS duplicate_count
+FROM learner_clean
+GROUP BY learner_id
+HAVING COUNT(*) > 1;
+-- 0 duplicates
+ 
+-- (4) (Optional) Validate country names against an ISO country list
+-- Example: Remove entries with invalid country names
+-- DELETE FROM learner_clean
+-- WHERE country IS NOT NULL AND country NOT IN (SELECT country_name FROM country_reference);
+ 
+
+/* -------------------------------------------------------------------------------------------------------------------------------------------
+	Post-Clean Data Quality Report
+------------------------------------------------------------------------------------------------------------------------------------------- */
+
+-- (1) Missing values count per column
+SELECT COUNT(*) FROM learner_clean; -- Values count 129259
+ 
+SELECT * FROM learner_clean LIMIT 10;
+ 
+-- (2) Country format check (should be title case, no all-caps or all-lowercase)
+SELECT country
+FROM learner_clean
+WHERE country <> INITCAP(country)
+AND country IS NOT NULL;
+-- None got effected, possibly the data in country column was in title case already.
+ 
+-- (3) Row count comparison before vs. after cleaning
+SELECT
+(SELECT COUNT(*) FROM learner_raw) AS raw_count,
+(SELECT COUNT(*) FROM learner_clean) AS clean_count;
+-- raw_count is eqaual to clean_count, means no data got deleted in cleaning procedure.
+ 
+-- (4) Unique learner_id check
+SELECT COUNT(DISTINCT learner_id) AS unique_ids,
+COUNT(*) AS total_rows
+FROM learner_clean;
+-- learner id holds all unique records.
+
+
+
+/* -------------------------------------------------------------------------------------------------------------------------------------------
+	Categorical Value Distribution / Frequency Outliers
+------------------------------------------------------------------------------------------------------------------------------------------- */
+
+
+-- (1) learner_id distribution (should ideally be unique)
+SELECT learner_id, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY learner_id
+ORDER BY freq DESC;
+ 
+-- (2) country distribution
+SELECT country, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY country
+ORDER BY freq DESC;
+ 
+-- (3) degree distribution
+SELECT degree, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY degree
+ORDER BY freq DESC;
+ 
+-- (4) institution distribution
+SELECT institution, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY institution
+ORDER BY freq DESC;
+ 
+-- (5) major distribution
+SELECT major, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY major
+ORDER BY freq DESC;
+
+ 
+-- Categorical Distributions in One Table
+
+SELECT 'learner_id' AS column_name, learner_id AS value, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY learner_id
+UNION ALL
+SELECT 'country' AS column_name, country AS value, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY country
+UNION ALL
+SELECT 'degree' AS column_name, degree AS value, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY degree
+UNION ALL
+SELECT 'institution' AS column_name, institution AS value, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY institution
+UNION ALL
+SELECT 'major' AS column_name, major AS value, COUNT(*) AS freq
+FROM learner_raw
+GROUP BY major
+ORDER BY column_name, freq DESC;
+SELECT
+(SELECT COUNT(*) FROM learner_raw) AS raw_count,
+(SELECT COUNT(*) FROM learner_clean) AS clean_count;
+ 
+-- Reviewing table
+SELECT * FROM learner_clean LIMIT 30;
+
+
+ 
+/* ============================================================================================================================
+		Cohort Table Queries
+============================================================================================================================ */
+
+DROP TABLE cohort_raw CASCADE;
+DROP TABLE IF EXISTS cohort_raw
+
+create table Cohort_raw(
+Cohort_ID TEXT,
+Cohort_Code Varchar(50) Primary Key,
+Start_Date TEXT,
+End_Date TEXT,
+Size INT
+)
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[OVERVIEW OF THE TABLE]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+select * from Cohort_raw;
+
+
+-- [ROW COUNT]
+select count(*) from cohort_raw; -- 639 TOTAL COUNT
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[CHECKING DATA TYPES & MISSING VALUES]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+-- DATA TYPES (from information_schema)
+select *, data_type
+from information_schema.columns
+where table_name = 'cohort_raw';
+
+-- MISSING VALUES PER COLUMN
+select
+    count(*) filter (where Cohort_ID is null) as Cohort_ID_nulls,
+    count(*) filter (where Cohort_Code is null) as Cohort_Code_nulls,
+	count(*) filter (where Start_Date is null) as Start_Date_nulls,
+    count(*) filter (where End_Date is null) as End_Date_nulls,
+	count(*) filter (where Size is null) as Size_nulls
+from cohort_raw;
+
+-- Cohort_ID has "0" null values
+-- Cohort_Code has "0" null values
+-- Start_Date has "0" null values
+-- End_Date has "0" null values
+-- Size has "0" null values
+
+ 
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[CHECKING DUPLICATES]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+-- [CHECKING IN COHORT_ID COLUMN]
+
+SELECT Cohort_ID, COUNT(*) AS duplicate_count
+FROM cohort_etl
+GROUP BY Cohort_ID
+HAVING COUNT(*) > 1;
+-- There are 639 duplicate values in the columns but it won’t be necessary to handle them as its same for each record.
+
+
+-- [CHECKING IN COHORT_CODE COLUMN]
+SELECT Cohort_Code, COUNT(*) AS duplicate_count
+FROM cohort_etl
+GROUP BY Cohort_Code
+HAVING COUNT(*) > 1;
+-- There are no duplicate values in the Cohort_Code
+
+
+--[CHECKING DUPLICATES PER COLUMN]
+select Cohort_ID, Cohort_Code, Start_Date, End_Date, Size, count(*)
+from cohort
+group by Cohort_ID, Cohort_Code, Start_Date, End_Date, Size
+having count(*)> 1;
+-- There are no duplicate values in the columns
+
+
+
+/*---------------------------------------------------------------------------------------------------------------------------------
+ [RUNING CLEANING, DEDUPLICATION, OUTLIER DETECTION, HANDLING INCONSISTENCY IN FORMATS AND VALIDATION QUERIES FOR THE CLEAN TABLE]
+---------------------------------------------------------------------------------------------------------------------------------*/
+Drop table if exists Cohort_ETL_clean;
+
+
+create table Cohort_ETL_clean as
+WITH ranked AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY Cohort_Code
+            ORDER BY Start_Date DESC NULLS LAST
+        ) AS rn
+    FROM Cohort_ETL
+),
+cleaned AS (
+    SELECT
+        TRIM(Cohort_ID) AS Cohort_ID,
+        TRIM(Cohort_Code) AS Cohort_Code,
+        Start_Date,
+        End_Date,
+        Size
+    FROM ranked
+    WHERE rn = 1
+),
+flagged AS (
+    SELECT
+        c.*,
+        CASE
+            WHEN Cohort_ID IS NULL THEN 'Missing Cohort_ID'
+            WHEN Cohort_Code IS NULL THEN 'Missing Cohort_Code'
+            WHEN Start_Date IS NULL THEN 'Missing Start_Date'
+            WHEN End_Date IS NULL THEN 'Missing End_Date'
+            WHEN End_Date < Start_Date THEN 'End_Date before Start_Date'
+            ELSE 'OK'
+        END AS data_quality_flag,
+        CASE
+            WHEN Size < (p.Q1 - 1.5 * (p.Q3 - p.Q1)) THEN 'Low Outlier'
+            WHEN Size > (p.Q3 + 1.5 * (p.Q3 - p.Q1)) THEN 'High Outlier'
+            ELSE 'Normal'
+        END AS size_outlier_flag
+    FROM cleaned c
+    CROSS JOIN (
+        SELECT
+            PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY Size) AS Q1,
+            PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY Size) AS Q3
+        FROM cleaned
+    ) p
+)
+SELECT * FROM flagged;
+
+-- Add primary key and altering the Table datatypes
+ALTER TABLE Cohort_ETL_clean
+ADD CONSTRAINT pk_cohort PRIMARY KEY (Cohort_Code);
+
+ALTER TABLE Cohort_ETL_clean
+ALTER COLUMN Cohort_Code TYPE VARCHAR(50);
+
+
+
+-- Table overview after cleaning, deduplication, outlier detection and validation
+select * from Cohort_ETL_clean
+
+
+/*------------------------------------------------------------------------------------------------------------------
+ [Checking data quality]
+------------------------------------------------------------------------------------------------------------------*/
+
+-- Completeness (Null / Missing Data)
+
+SELECT 
+    COUNT(*) AS total_rows,
+    COUNT(cohort_id) AS cohort_non_null,
+    COUNT(*) - COUNT(cohort_id) AS cohort_id_missing,
+    COUNT(cohort_code) AS cohort_code_non_null,
+    COUNT(*) - COUNT(cohort_code) AS cohort_code_missing,
+	COUNT(start_date) AS start_date_non_null,
+    COUNT(*) - COUNT(start_date) AS start_date_missing,
+    COUNT(end_date) AS end_date_non_null,
+    COUNT(*) - COUNT(end_date) AS end_date_missing,
+	COUNT(size) AS size_null,
+    COUNT(*) - COUNT(size) AS size_missing
+    FROM Cohort_ETL_clean;
+
+
+-- CHECKING UNIQUENESS
+
+-- DUPLICATED COUNTS IN ALL COLUMNS CHECK
+SELECT cohort_id, COUNT(*) 
+FROM Cohort_ETL_clean
+GROUP BY cohort_id
+HAVING COUNT(*) > 1; -- same for each record
+
+SELECT cohort_code, COUNT(*) 
+FROM Cohort_ETL_clean
+GROUP BY cohort_code
+HAVING COUNT(*) > 1; --none found
+
+SELECT start_date, COUNT(*) 
+FROM Cohort_ETL_clean
+GROUP BY start_date
+HAVING COUNT(*) > 1; -- FOUND 96 DUPLICATES IN START_DATE
+
+SELECT end_date, COUNT(*) 
+FROM Cohort_ETL_clean
+GROUP BY end_date
+HAVING COUNT(*) > 1; -- FOUND 99 DUPLICATES IN END_DATE 
+
+SELECT size, COUNT(*) 
+FROM Cohort_ETL_clean
+GROUP BY size
+HAVING COUNT(*) > 1; --FOUND 23 DUPLICATES IN SIZE
+
+
+-- Timeliness (checking timeline)
+SELECT *
+FROM Cohort_ETL_clean
+WHERE start_date > CURRENT_DATE
+   OR end_date > CURRENT_DATE; -- 21 current date data
+
+SELECT *
+FROM Cohort_ETL_clean
+WHERE start_date <= CURRENT_DATE
+   OR end_date <= CURRENT_DATE;
+
+-- Aggregate Summary
+SELECT
+    COUNT(*) AS total_records,
+    COUNT(*) FILTER (WHERE cohort_id IS NULL) AS cohort_id_missing,
+    COUNT(*) FILTER (WHERE cohort_code IS NULL) AS cohort_code_missing,
+    COUNT(*) FILTER (WHERE start_date IS NULL) AS start_date_missing,
+    COUNT(*) FILTER (WHERE end_date IS NULL) AS end_date_missing,
+    COUNT(*) FILTER (WHERE size IS NULL) AS size_missing,
+FROM Cohort_ETL_clean;
+
+
+select * from cognito_clean
+
+/* =================================================================================================================================
+  Cognito table queries
+================================================================================================================================= */
+
+DROP TABLE IF EXISTS cognito_raw;
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[TABLE CREATION BASED ON XLSX STRUCTURE]
+-------------------------------------------------------------------------------------------------------------------------------*/
+ 
+CREATE TABLE cognito_raw (
+user_id UUID,
+email TEXT,
+gender TEXT,
+UserCreateDate TIMESTAMP,
+UserLastModifiedDate TIMESTAMP,
+birthdate DATE,
+city TEXT,
+zip TEXT,
+state TEXT
+);
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[OVERVIEW OF THE TABLE]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+SELECT * FROM cognito_raw;
+
+-- Row count
+
+SELECT COUNT(*) AS total_rows FROM cognito_raw; -- returns 129,178
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+ 	[CHECKING DATA TYPES & MISSING/NULL VALUES]
+-------------------------------------------------------------------------------------------------------------------------------*/
+ 
+-- Check data types from system catalog
+
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'cognito_raw';
+ 
+-- Count NULLs per column
+SELECT
+ COUNT(*) FILTER (WHERE user_id IS NULL) AS user_id_nulls,
+ COUNT(*) FILTER (WHERE email IS NULL) AS email_nulls,
+ COUNT(*) FILTER (WHERE gender IS NULL) AS gender_nulls,
+ COUNT(*) FILTER (WHERE UserCreateDate IS NULL) AS create_date_nulls,
+ COUNT(*) FILTER (WHERE UserLastModifiedDate IS NULL) AS last_modified_nulls,
+ COUNT(*) FILTER (WHERE birthdate IS NULL) AS birthdate_nulls,
+ COUNT(*) FILTER (WHERE city IS NULL) AS city_nulls,
+ COUNT(*) FILTER (WHERE zip IS NULL) AS zip_nulls,
+ COUNT(*) FILTER (WHERE state IS NULL) AS state_nulls
+ FROM cognito_raw;
+
+-- user_id has "0" null values
+-- email has "0" null values
+-- gender has "42862" null values
+-- user_create_Date has "0" null values
+-- user_last_modified_date has "0" null values
+-- birthdate has "42862" null values
+-- city has "42863" null values
+-- zip has "42867" null values
+-- state has "42864" null values
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+	[CHECKING DATE RANGE]
+-------------------------------------------------------------------------------------------------------------------------------*/
+
+-- Date range checks:
+
+SELECT MIN(UserCreateDate) AS min_create, 
+MAX(UserCreateDate) AS max_create
+FROM cognito_raw;
+-- MIN "2023-01-05 16:32:30.99"
+-- MAX "2025-02-25 00:34:25.207"
+ 
+SELECT MIN(UserLastModifiedDate) AS min_last_mod, 
+MAX(UserLastModifiedDate) AS max_last_mod
+FROM cognito_raw;
+-- MIN "2023-01-05 19:03:50.665"
+-- MAX "2025-02-25 00:34:25.207"
+ 
+SELECT MIN(birthdate) AS min_birth, 
+MAX(birthdate) AS max_birth
+FROM cognito_raw;
+-- MIN "1924-06-19" 
+-- MAX "2022-05-27"
+
+
+-- AGE OUTLIER DETECTION (IQR method)
+
+WITH date_as_age AS (
+SELECT EXTRACT(YEAR FROM AGE(CURRENT_DATE, birthdate)) AS age
+FROM cognito_raw
+WHERE birthdate IS NOT NULL
+),
+quartiles AS (
+SELECT
+PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY age) AS q1,
+PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY age) AS q3
+FROM date_as_age
+),
+iqr_calc AS (
+SELECT q1, q3, (q3- q1) AS iqr
+FROM quartiles
+)
+SELECT *
+FROM date_as_age, iqr_calc
+WHERE age < (q1- 1.5 * iqr)
+OR age > (q3 + 1.5 * iqr);
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------
+	[ADDING COLUMN, DATA TYPE CORRECTION, FORMAT CORRECTION AND FLAGGING MISSING VALUES IN THE CLEAN TABLE]
+-------------------------------------------------------------------------------------------------------------------------------*/
+DROP TABLE IF EXISTS cognito_clean;
+
+-- Creating cognito_clean table without the new age column
+
+CREATE TABLE cognito_clean AS
+WITH ranked AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY user_id
+            ORDER BY UserLastModifiedDate DESC NULLS LAST
+        ) AS rn
+    FROM cognito_raw
+),
+with_age_base AS (
+    SELECT
+        user_id,
+        LOWER(TRIM(email)) AS email,
+        INITCAP(TRIM(gender)) AS gender,
+        UserCreateDate::date AS User_Create_Date,
+        UserLastModifiedDate::date AS User_Last_Modified_Date,
+        birthdate,
+        DATE_PART('year', AGE(CURRENT_DATE, birthdate))::int AS age,
+        INITCAP(TRIM(city)) AS city,
+        zip,
+        INITCAP(TRIM(state)) AS state
+    FROM ranked
+    WHERE rn = 1
+),
+with_age AS (
+    SELECT
+        b.*,
+        -- Missing value flags
+        CASE WHEN b.city IS NULL OR TRIM(b.city) = '' THEN 'Missing' ELSE 'Present' END AS city_flag,
+        CASE WHEN b.state IS NULL OR TRIM(b.state) = '' THEN 'Missing' ELSE 'Present' END AS state_flag,
+        CASE WHEN b.zip IS NULL OR TRIM(b.zip::text) = '' THEN 'Missing' ELSE 'Present' END AS zip_flag,
+        CASE 
+            WHEN b.birthdate IS NULL THEN 'Missing'
+            WHEN b.age < 18 THEN 'Underage'
+            WHEN b.age BETWEEN 18 AND 64 THEN 'Adult'
+            WHEN b.age >= 65 THEN 'Senior'
+            ELSE 'Unknown'
+        END AS age_flag,
+        -- Gender flag
+        CASE 
+            WHEN b.gender IS NULL OR TRIM(b.gender) = '' THEN 'Missing'
+            WHEN LOWER(b.gender) = 'male' THEN 'Male'
+            WHEN LOWER(b.gender) = 'female' THEN 'Female'
+            ELSE 'Other'
+        END AS gender_flag
+    FROM with_age_base b
+),
+iqr_calc AS (
+    SELECT
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY age) AS Q1,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY age) AS Q3
+    FROM with_age
+    WHERE age IS NOT NULL
+),
+flagged AS (
+    SELECT
+        w.*,
+        CASE
+            WHEN w.age IS NULL THEN 'No Birthdate'
+            WHEN w.age < (i.Q1 - 1.5 * (i.Q3 - i.Q1)) THEN 'Low Outlier'
+            WHEN w.age > (i.Q3 + 1.5 * (i.Q3 - i.Q1)) THEN 'High Outlier'
+            ELSE 'Normal'
+        END AS age_outlier_flag
+    FROM with_age w
+    CROSS JOIN iqr_calc i
+)
+SELECT * FROM flagged;
+
+-- Add primary key
+ALTER TABLE cognito_clean
+ADD CONSTRAINT pk_user_id PRIMARY KEY (user_id);
+
+
+-- CHECKING TABLE
+SELECT * FROM cognito_clean;
+
+
+/*------------------------------------------------------------------------------------------------------------------
+ [Checking data quality]
+------------------------------------------------------------------------------------------------------------------*/
+
+-- Completeness (Null / Missing Data)
+
+SELECT 
+    COUNT(*) AS total_rows,
+    COUNT(email) AS email_non_null,
+    COUNT(*) - COUNT(email) AS email_missing,
+    COUNT(birthdate) AS birthdate_non_null,
+    COUNT(*) - COUNT(birthdate) AS birthdate_missing
+FROM cognito_clean;
+
+
+-- Uniqueness
+
+-- Duplicated user_ids
+SELECT user_id, COUNT(*) 
+FROM cognito_clean
+GROUP BY user_id
+HAVING COUNT(*) > 1; --none found
+
+-- Duplicated emails
+SELECT email, COUNT(*) 
+FROM cognito_clean
+GROUP BY email
+HAVING COUNT(*) > 1; --found 9 duplicate emails
+
+-- Validity
+
+-- Invalid genders
+SELECT DISTINCT gender
+FROM cognito_clean
+WHERE gender NOT IN ('Male', 'Female', 'Other'); -- found 1 invalid gender
+
+-- Non-numeric zips
+SELECT zip
+FROM cognito_clean
+WHERE zip !~ '^[0-9]+$'; -- found 2830 non-numeric zips
+
+-- Consistency
+SELECT user_id, birthdate, age, 
+       DATE_PART('year', AGE(CURRENT_DATE, birthdate)) AS expected_age
+FROM cognito_clean
+WHERE age IS DISTINCT FROM DATE_PART('year', AGE(CURRENT_DATE, birthdate)); 
+
+-- Timeliness (checking its timeline)
+SELECT *
+FROM cognito_clean
+WHERE User_Create_Date > CURRENT_DATE
+   OR birthdate > CURRENT_DATE; -- current date timeline
+
+-- Aggregate Summary
+SELECT
+    COUNT(*) AS total_records,
+    COUNT(*) - COUNT(email) AS missing_email,
+    COUNT(*) - COUNT(birthdate) AS missing_birthdate,
+    COUNT(DISTINCT user_id) AS unique_users,
+    COUNT(DISTINCT email) AS unique_emails,
+    SUM(CASE WHEN gender NOT IN ('Male','Female','Other') THEN 1 ELSE 0 END) AS invalid_genders,
+    SUM(CASE WHEN User_Create_Date > CURRENT_DATE THEN 1 ELSE 0 END) AS invalid_create_dates
+FROM cognito_clean;
+
+select * from cognito_clean
+
+
+
+-- Master table queries
+
+-- Drop master table if it already exists
+DROP TABLE IF EXISTS Master_Table;
+
+
+-- Create Master Table from all joined datasets
+CREATE TABLE Master_Table AS
+SELECT 
+    -- Learner Dataset
+    l.learner_id,
+    l.country,
+    l.degree AS learner_degree,
+    l.institution AS learner_institution,
+
+    -- Cognito Dataset
+    c.user_id,
+    c.email,
+    c.gender,
+    c.user_create_date,
+    c.user_last_modified_date,
+    c.birthdate,
+    c.city,
+    c.zip,
+    c.state,
+
+    -- Learner Opportunity Dataset
+    lo.enrollment_id,
+    lo.assigned_cohort,
+    lo.apply_date,
+    lo.status,
+
+    -- Cohort Dataset
+    co.cohort_id,
+    co.cohort_code,
+    co.start_date,
+    co.end_date,
+    co.size AS cohort_size,
+
+    -- Opportunity Dataset
+    o.opportunity_id,
+    o.opportunity_name,
+    o.category,
+    o.opportunity_code,
+    o.tracking_questions,
+
+    -- Marketing Dataset
+    m.ad_account_name,
+    m.campaign_name,
+    m.delivery_status,
+    m.delivery_level,
+    m.reach,
+	m.outbound_clicks,
+    m.outbond_type as outbound_type,
+    m.result_type,
+	m.results,
+	m.cost_per_result,
+	m.amount_spent_aed,
+	m.cpc_cost_per_link_click,
+    m.reporting_starts
+
+FROM learner_clean l
+
+-- Join Cognito Users (strip 'Learner_' prefix, cast to UUID)
+LEFT JOIN cognito_clean c
+    ON SUBSTRING(l.learner_id, 9)::uuid = c.user_id 
+
+-- Join Learner Opportunity (link on learner_id)
+LEFT JOIN learner_opportunity_clean lo
+    ON l.learner_id = lo.learner_id  
+
+-- Join Cohort (Assigned_Cohort matches Cohort_Code)
+LEFT JOIN cohort_etl_clean co
+    ON lo.assigned_cohort = co.cohort_code 
+
+-- Join Opportunity (enrollment_id to opportunity_id) -- Based on data patterns: learner_id column contains Opportunity# values
+LEFT JOIN opportunity_clean o
+    ON lo.enrollment_id= o.opportunity_id 
+
+-- Join Marketing (opportunity_name to campaign_name) 
+LEFT JOIN marketing_campaign_clean m
+    ON o.opportunity_name = m.campaign_name;
+
+-- master table overview
+select * from Master_Table limit 5000;
+
+select Count(*) From master_table;
+
+--Data Type Verification:
+
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'master_table';
+
+
+-- detecting orphan records in the table
+
+--Learners without Cohorts
+SELECT l.*
+FROM learner_clean l
+LEFT JOIN learner_opportunity_clean lo 
+       ON l.learner_id = lo.learner_id
+WHERE lo.learner_id IS NULL;
+-- Found 129259 orphan records here.
+
+
+--Cohorts not linked to any Learner
+SELECT c.*
+FROM cohort_etl_clean c
+LEFT JOIN learner_opportunity_clean lo 
+       ON c.cohort_code = lo.assigned_cohort
+WHERE lo.assigned_cohort IS NULL;
+-- Found 96 orphan records here
+
+
+-- Opportunities with no Learner Enrollment
+SELECT o.*
+FROM opportunity_clean o
+LEFT JOIN learner_opportunity_clean lo 
+       ON lo.enrollment_id= o.opportunity_id 
+WHERE lo.enrollment_id IS NULL;
+-- Found 187 orphan records here
+
+-- Learners in Master Table with missing Cognito account
+SELECT l.*
+FROM learner_clean l
+LEFT JOIN cognito_clean cg 
+       ON l.learner_id::text = cg.user_id::text
+WHERE cg.user_id IS NULL;
+-- Found 129259 orphan records here
+
+-- Opportunities with no matching Marketing Campaign
+SELECT o.*
+FROM opportunity_clean o
+LEFT JOIN marketing_campaign_clean m
+       ON o.opportunity_name = m.campaign_name
+WHERE m.campaign_name IS NULL;
+-- Found 187 orphan records here
+
+--Record Count Validation:
+SELECT 
+    (SELECT COUNT(*) FROM learner_opportunity_clean) AS source_count,  -- Central table
+    (SELECT COUNT(*) FROM master_table) AS master_count;
+
+--Missing Data Review:
+SELECT 
+    COUNT(*) FILTER (WHERE learner_id IS NULL) AS null_learner_id,
+    COUNT(*) FILTER (WHERE opportunity_name IS NULL) AS null_opportunity_name,
+    COUNT(*) FILTER (WHERE assigned_cohort IS NULL) AS null_assigned_cohort,
+    COUNT(*) FILTER (WHERE campaign_name IS NULL) AS null_campaign_name  -- High if fuzzy matches fail
+FROM master_table;
+
+--Expected: high null_campaign_name if links are weak (handled as valid non-matches).
+
+--Foreign Key Integrity:
+
+-- Check orphan learners
+SELECT mt.learner_id 
+FROM master_table mt 
+LEFT JOIN learner_clean l ON mt.learner_id = l.learner_id 
+WHERE l.learner_id IS NULL;
+
+-- Similar for assigned_cohort
+SELECT mt.assigned_cohort 
+FROM master_table mt 
+LEFT JOIN cohort_etl_clean c ON mt.assigned_cohort = c.cohort_code 
+WHERE c.cohort_code IS NULL;
+
+Expected: 0 orphans (enforced by FKs).
+
+
+*** end of queries***
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
