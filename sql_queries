@@ -1,5 +1,6 @@
 **Marketing, Learner, Opportunity, Learner Opportunity, Cohort, & Cognito dataet qureies performed on postgresql**
 
+```sql
 /* =================================================================================================================================
     Marketing Campaign table queries
 ================================================================================================================================= */
@@ -1645,20 +1646,5 @@ WHERE c.cohort_code IS NULL;
 
 Expected: 0 orphans (enforced by FKs).
 
-
 *** end of queries***
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
