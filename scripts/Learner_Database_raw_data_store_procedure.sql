@@ -1,3 +1,15 @@
+/*
+====================================================================================
+DDL Script: Create Raw Tables
+====================================================================================
+
+Script purpuse:
+	This script creates tables in the learner_db database, dropping existing tables
+	if they already exist.
+  Run this script to re-define the DDl structure of Raw tables
+====================================================================================
+*/
+
 CREATE OR REPLACE PROCEDURE learner_db_raw_dataset()
 LANGUAGE plpgsql
 AS $$
@@ -159,3 +171,4 @@ EXCEPTION
         RAISE NOTICE 'Error occurred in learner_db_raw_dataset: %', SQLERRM;
 END;
 $$;
+
