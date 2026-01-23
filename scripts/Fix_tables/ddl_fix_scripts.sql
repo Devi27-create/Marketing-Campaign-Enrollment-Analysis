@@ -165,9 +165,9 @@ FROM cohort_raw
 WHERE start_date <= end_date AND size > 0; -- Drop invalid (none observed)
 
 
-		 ---------------------------------------------------------
----->>>> Cognito Fixed (dedup emails, convert dates, add age flag) <<<<----
-		 ---------------------------------------------------------
+-----------------
+-- Cognito Fixed 
+-----------------
 DROP TABLE IF EXISTS cognito_fix;
 
 CREATE TABLE cognito_fix AS
