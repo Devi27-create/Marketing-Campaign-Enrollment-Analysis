@@ -1,9 +1,20 @@
 /*
 ============================================================================================================================
-
+Stored Procedure: Load Fix layer (Raw -> Fix)
 ============================================================================================================================
+Script Purpose:
+	This stored procedure performs sthe ETL (Extract, Transform, Load) process to populate the Fix tables from the Raw 
+	tables.
+ Actions Performed:
+	- Drop Fix tables.
+	- Inserts transformed and cleansed data from Raw into Fix tables.
 
+Parameter:
+	None.
+	This stores procedure does note accept any parameters or return any values.
 
+Usage Example:
+	EXEC Learner_DB_Fixed_Dataset;
 ============================================================================================================================
 */
 
