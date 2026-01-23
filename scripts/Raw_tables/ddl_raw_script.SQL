@@ -14,7 +14,7 @@ Script Purpose:
 
 DROP TABLE IF EXISTS learner_raw CASCADE;
 CREATE TABLE learner_raw (
-	  learner_id TEXT PRIMARY KEY,
+	learner_id TEXT PRIMARY KEY,
     country TEXT,
     degree TEXT,
     institution TEXT,
@@ -25,8 +25,8 @@ CREATE TABLE learner_raw (
 -- Opportunity Raw
 -- =========================
 
-DROP TABLE IF EXISTS opportunity_raw CASCADE;
-CREATE TABLE opportunity_raw (
+DROP TABLE IF EXISTS opp_raw CASCADE;
+CREATE TABLE opp_raw (
    	opportunity_id TEXT PRIMARY KEY,
     opportunity_name TEXT,
     category TEXT,
@@ -38,8 +38,8 @@ CREATE TABLE opportunity_raw (
 -- Learner Opportunity Raw
 -- =========================
 
-DROP TABLE IF EXISTS learner_opportunity_raw CASCADE;
-CREATE TABLE learner_opportunity_raw (
+DROP TABLE IF EXISTS learner_opp_raw CASCADE;
+CREATE TABLE learner_opp_raw (
 	enrollment_id TEXT,
     learner_id TEXT,
     assigned_cohort TEXT,
@@ -99,3 +99,4 @@ CREATE TABLE marketing_raw (
 	cpc_cost_per_link_click NUMERIC,
 	reporting_starts DATE
 );
+
