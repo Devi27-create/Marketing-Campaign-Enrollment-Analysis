@@ -226,7 +226,7 @@ Fuzzy-matched marketing campaigns to opportunities.
 
 ## Notes
 
-- All _fix tables represent analytics-ready datasets
+- All _clean tables represent analytics-ready datasets
 
 - Raw tables remain unchanged for traceability
 
