@@ -29,6 +29,8 @@ Execution Notes:
 */
 
 
+------>> CLEAN DATA SCRIPT <<------
+
 CREATE OR REPLACE PROCEDURE learner_db_clean_dataset()
 LANGUAGE plpgsql
 AS $$
@@ -40,6 +42,7 @@ BEGIN
     -- =====================================================
     -- Learner & Cognito Clean
     -- =====================================================
+	
     RAISE NOTICE '----------------------------------------------------------------------------------';
     RAISE NOTICE 'Loading learner_cognito_clean table';
     RAISE NOTICE '----------------------------------------------------------------------------------';
@@ -87,6 +90,7 @@ BEGIN
     -- =====================================================
     -- Cohort & Learner Opportunity Clean
     -- =====================================================
+	
     RAISE NOTICE '----------------------------------------------------------------------------------';
     RAISE NOTICE 'Loading cohort_and_learner_opp_clean table';
     RAISE NOTICE '----------------------------------------------------------------------------------';
@@ -124,6 +128,7 @@ BEGIN
     -- =====================================================
     -- Opportunity & Learner Opportunity Clean
     -- =====================================================
+	
     RAISE NOTICE '----------------------------------------------------------------------------------';
     RAISE NOTICE 'Loading opportunity_and_learner_opp_clean table';
     RAISE NOTICE '----------------------------------------------------------------------------------';
@@ -161,6 +166,7 @@ BEGIN
     -- =====================================================
     -- Marketing & Opportunity Clean
     -- =====================================================
+	
     RAISE NOTICE '----------------------------------------------------------------------------------';
     RAISE NOTICE 'Loading marketing_opportunity_clean table';
     RAISE NOTICE '----------------------------------------------------------------------------------';
@@ -186,6 +192,9 @@ BEGIN
 	        COALESCE(mf.amount_spent_aed, 0) AS amount_spent_aed,
 	        COALESCE(mf.cpc_cost_per_link_click, 0) AS cpc_cost_per_link_click,
 	        mf.reporting_starts,
+			COALESCE(mf.campaign_month, 'Unknown') AS campaign_month,
+			COALESCE(mf.campaign_type, 'Unknown') AS campaign_type,
+			COALESCE(mf.marketing_objective, 'Unknown') AS marketing_objective,
 	        COALESCE(mf.performance_flag, 'Unknown') AS performance_flag,
 	        o.opportunity_id,
 	        o.opportunity_name,
@@ -201,7 +210,7 @@ BEGIN
 	       o.opportunity_name ILIKE '%' || mf.campaign_name || '%'
 	    OR mf.campaign_name ILIKE '%' || o.opportunity_name || '%'
 	 )
-	
+
 	-- Indexes
 	CREATE INDEX idx_moc_campaign_name ON mark_opp_clean(campaign_name);
 	CREATE INDEX idx_moc_match_flag ON mark_opp_clean(marketing_match_flag);
@@ -214,6 +223,7 @@ BEGIN
     -- =====================================================
     -- DONE
     -- =====================================================
+	
     RAISE NOTICE '----------------------------------------------------------------------------------';
     RAISE NOTICE 'ALL CLEAN TABLES LOADED SUCCESSFULLY';
     RAISE NOTICE '----------------------------------------------------------------------------------';
