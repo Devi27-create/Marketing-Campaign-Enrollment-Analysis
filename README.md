@@ -1,24 +1,236 @@
-# Marketing-Campaign-Enrollment-Analysis
+# Marketing Campaign Enrollment Analysis
 
-## Introduction
-The marketing campaign enrollment analysis system is strategically developed to effectively manage and monitor the various marketing campaigns and the enrollments associated with them. This comprehensive system not only provides insights into specific campaigns and their respective enrollments but also stores a wealth of additional information pertaining to cohorts, opportunities, and learners. Its design aims to streamline the analysis process, enabling marketers to gauge the performance and reach of their campaigns efficiently.
+## Overview
+
+The Marketing Campaign Enrollment Analysis project is an end-to-end data engineering and analytics pipeline designed to consolidate, clean, enrich, and analyze marketing campaign performance alongside learner enrollment data.
+
+The system transforms multiple raw operational datasets into structured, analytics-ready tables, enabling accurate campaign performance tracking, learner engagement analysis, and cohort-level insights.
+
+This project emphasizes:
+ 
+- Data quality enforcement
+- Scalable transformations
+- Auditable enrichment logic
+- Analytics-ready dimensional modeling
+
+## Architecture & Data Flow
+
+The pipeline follows a layered data model:
+
+Raw Data
+   ↓
+Fixed Tables
+   ↓
+Cleaned 
+   ↓
+Enriched Marketing & Enrollment Views
+   ↓
+Analytics / Dashboard
+
+
+Each layer is designed to be:
+
+- Rebuildable
+
+- Auditable
+
+- Isolated from downstream logic changes
 
 ## Datasets Used
-For this analysis, six essential datasets were integrated, forming the robust foundation of the marketing campaign enrollment system:
+### 1️⃣ Learner
 
-1. **Learner**: This dataset encompasses comprehensive profiles of all learners, detailing attributes such as learner IDs, country of residence, educational degrees, institution attended by learner, and their chosen majors. It serves as a vital component for targeting and understanding learners within specific geographical regions.
+Contains demographic and academic information for learners.
 
-2. **Opportunity**: The Opportunity dataset plays a vital role in our analytics by capturing essential information related to various business opportunities. This dataset includes fields such as the Opportunity Name, a unique identifier known as the Opportunity ID, the category to which each opportunity belongs, a specific Opportunity Code for streamlined referencing, and a series of Tracking Questions designed to evaluate and monitor progress and performance. These details collectively contribute to a comprehensive understanding of our opportunities and facilitate informed decision-making.
- 
-3. **Learner Opportunity**: This dataset focuses on the candor of enrollments, containing records of enrollment IDs, learner IDs, assigned cohorts, application dates, and the current status of each enrollment. It allows for tracking the progression and engagement of learners within the marketing initiatives.
+- Learner ID
 
-4. **Cohort**: The Cohort dataset provides vital information regarding various cohorts, including cohort IDs, cohort codes, start and end dates, and the size of each cohort. This data is essential for understanding the structure and dynamics of groups participating in the campaigns.
+- Country
 
-5. **Cognito**: The Cognito dataset revolves around user information, capturing user IDs, email addresses, gender, account creation dates, last modification dates, birth dates, and geographical details such as city, zip code, and state. This dataset is integral for segmenting users and tailoring marketing strategies accordingly.
+- Degree
 
-6. **Marketing Campaign**: The Marketing Campaign dataset offers a comprehensive overview of all accounts tied to marketing efforts. It encompasses detailed metrics such as ad account names, campaign names, delivery status, delivery levels, reach, outbound clicks, outbound types, result types, results achieved, cost per result, total amount spent (in AED), cost per link click (CPC), and reporting start dates. This dataset is key to evaluating the effectiveness and efficiency of various marketing campaigns. 
+- Institution
 
-By utilizing these datasets, the marketing campaign enrollment analysis can provide deeper insights and foster data-driven decision-making processes.
+- Major
 
-Here's how the Dashboard looks:
-![Alt text](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Dashboard%20(1).pdf)
+Used to understand learner distribution, educational background, and profile completeness.
+
+### 2️⃣ Opportunity
+
+Captures details of programs, courses, challenges, and internships.
+
+- Opportunity ID
+
+- Opportunity Name
+
+- Category
+
+- Opportunity Code
+
+- Tracking Questions
+
+Supports campaign-to-opportunity attribution and enrollment analysis.
+
+### 3️⃣ Learner Opportunity
+
+- Represents enrollment activity.
+
+- Enrollment ID
+
+- Learner ID
+
+- Assigned Cohort
+
+- Application Date
+
+- Enrollment Status
+
+Tracks learner engagement across opportunities and campaigns.
+
+### 4️⃣ Cohort
+
+Defines structured learning groups.
+
+- Cohort ID
+
+- Cohort Code
+
+- Start Date
+
+- End Date
+
+- Cohort Size
+
+Used for time-based analysis, cohort lifecycle tracking, and capacity insights.
+
+### 5️⃣  Cognito
+
+User account and demographic data sourced from authentication systems.
+
+- User ID
+
+- Email
+
+- Gender
+
+- Birthdate
+
+- Location (City, State, Zip)
+
+- Account creation & modification timestamps
+
+Enables user-level segmentation and demographic analysis.
+
+### 6️⃣  Marketing Campaign
+
+- Marketing performance metrics across platforms.
+
+- Ad Account Name
+
+- Campaign Name
+
+- Delivery Status & Level
+
+- Reach
+
+- Clicks & Results
+
+- Cost Metrics (CPC, Cost per Result, Spend)
+
+- Reporting Start Date
+
+Used to evaluate campaign effectiveness and ROI.
+
+## Data Cleaning & Standardization
+
+Raw datasets are transformed into fixed then clean tables using a PostgreSQL stored procedure:
+
+### Key transformations include:
+
+- Null and placeholder value normalization
+
+- Text standardization (trimming, decoding, validation)
+
+- Deduplication using window functions
+
+- Derived attributes (age, cohort duration, campaign month)
+
+- Data quality flags for auditing
+
+All transformations are set-based, ensuring scalability and performance.
+
+## Marketing Campaign Enrichment
+
+Marketing campaigns are enriched with derived attributes:
+
+- Campaign Month (non-positional keyword detection)
+
+- Campaign Type (Competition, Internship, Course, etc.)
+
+- Marketing Objective (Awareness, Prospecting, Leads, Reach)
+
+- Performance Flags (high cost, no results, valid)
+
+Campaign names are preserved in raw form to maintain traceability.
+
+## Fuzzy Matching & Audit Layer
+
+Due to inconsistent naming conventions between campaigns and opportunities, fuzzy matching is used to link them:
+
+- PostgreSQL pg_trgm extension for similarity scoring
+
+- Normalized comparison fields
+
+- Best-match selection per campaign
+
+- Confidence scoring (High / Medium / Low)
+
+An audit table captures low-confidence matches for manual review, ensuring transparency and control.
+
+## Automation
+
+All fixed-layer transformations are orchestrated via a PostgreSQL stored procedure:
+
+- Rebuilds all cleaned tables
+
+- Logs execution time per dataset
+
+- Fails safely with error reporting
+
+This makes the pipeline reproducible and production-ready.
+
+## Dashboard
+
+The processed data feeds an analytics dashboard that provides insights into:
+
+- Campaign performance
+
+- Learner enrollment trends
+
+- Opportunity engagement
+
+- Cohort lifecycle analysis
+
+## 📊 Dashboard Preview:
+
+Dashboard screenshot: [Alt]()
+
+## Tech Stack
+
+- Database: PostgreSQL
+
+- Data Modeling: Star-schema inspired fact & dimension design
+
+- ETL: SQL / PL-pgSQL (set-based transformations)
+
+- Text Matching: pg_trgm fuzzy matching
+
+- Visualization: BI dashboard (PDF preview included)
+
+## Key Takeaways
+
+- Built with real-world data inconsistency in mind
+
+- Emphasizes auditability over blind automation
+
+- Designed to scale from analysis to production
+
+- Clean separation between raw, fixed, and enriched layers
