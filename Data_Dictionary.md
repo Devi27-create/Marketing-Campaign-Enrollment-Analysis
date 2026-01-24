@@ -139,24 +139,24 @@ These are built by joining fixed tables for analytics use cases
 
 Unified learner profile combining learner attributes and Cognito demographics.
 
-| Column                  | Data Type| Description                |
-| ----------------------- | -------- |--------------------------- |
-| learner_key             |          |Surrogate key               |
-| learner_id              |          | Unique learner identifier  |
-| email                   |          |Learner email               |
-| gender                  |          |Gender                      |
-| birthdate               |          |Date of birth               |
-| age                     |          |Derived age                 |
-| city                    |          |City                        |
-| state                   |          |State                       |
-| zip                     |          |ZIP code                    |
-| user_create_date        |          |Account creation timestamp  |
-| user_last_modified_date |          |Last modification timestamp |
-| country                 |          |Country                     |
-| degree                  |          |Education level             |
-| institution             |          |Institution name            |
-| major                   |          |Major                       |
-| profile_flag            |          |Profile quality status      |
+| Column                    | Data Type | Description                |
+| ------------------------- | --------- |--------------------------- |
+| `learner_key`             | BIGINT    |Surrogate key               |
+| `learner_id`              | TEXT      | Unique learner identifier  |
+| `email`                   | TEXT      |Learner email               |
+| `gender`                  | TEXT      |Gender                      |
+| `birthdate`               | DATE      |Date of birth               |
+| `age`                     | NUMERIC   |Derived age                 |
+| `city`                    | TEXT      |City                        |
+| `state`                   | TEXT      |State                       |
+| `zip`                     | TEXT      |ZIP code                    |
+| `user_create_date`        | TIMESTAMP |Account creation timestamp  |
+| `user_last_modified_date` | TIMESTAMP |Last modification timestamp |
+| `country`                 | TEXT      |Country                     |
+| `degree`                  | TEXT      |Education level             |
+| `institution`             | TEXT      |Institution name            |
+| `major`                   | TEXT      |Major                       |
+| `profile_flag`            | TEXT      |Profile quality status      |
 
 
 
@@ -164,61 +164,63 @@ Unified learner profile combining learner attributes and Cognito demographics.
 
 Enrollment data enriched with cohort metadata.
 
-| Column           | Data Type| Description                |
-| ---------------- | -------- | -------------------------- |
-| learner_id       |          | Learner ID                |
-| cohort_id        |          | Cohort ID                 |
-| cohort_code      |          | Cohort code               |
-| assigned_cohort  |          | Assigned cohort reference |
-| cohort_size      |          | Number of learners        |
-| start_date       |          | Cohort start date         |
-| end_date         |          | Cohort end date           |
-| duration_days    |          | Duration in days          |
-| status_flag      |          | Cohort status             |
-| size_flag        |          | Size validation flag      |
-| learner_opp_flag |          | Enrollment quality flag   |
+| Column           | Data Type | Description               |
+| ---------------- | --------- | ------------------------- |
+| learner_id       | TEXT      | Learner ID                |
+| cohort_id        | TEXT      | Cohort ID                 |
+| cohort_code      | TEXT      | Cohort code               |
+| assigned_cohort  | TEXT      | Assigned cohort reference |
+| cohort_size      | INTEGER   | Number of learners        |
+| start_date       | TIMESTAMP | Cohort start date         |
+| end_date         | TIMESTAMP | Cohort end date           |
+| duration_days    | NUMERIC   | Duration in days          |
+| status_flag      | TEXT      | Cohort status             |
+| size_flag        | TEXT      | Size validation flag      |
+| learner_opp_flag | TEXT      | Enrollment quality flag   |
 
 
 **9️⃣ opp_and_learner_opp_clean**
 
 Opportunity details linked to learner enrollments.
 
-| Column             | Description              |
-| ------------------ | ------------------------ |
-| opportunity_id     | Opportunity ID           |
-| opportunity_name   | Opportunity name         |
-| category           | Opportunity category     |
-| opportunity_code   | Reference code           |
-| tracking_questions | Tracking metadata        |
-| opp_flag           | Opportunity quality flag |
-| learner_id         | Learner ID               |
-| status             | Enrollment status        |
-| apply_date         | Application date         |
+| Column             | Data Type | Description               |
+| ------------------ | --------- | ------------------------- |
+| opportunity_id     | TEXT      | Opportunity ID           |
+| opportunity_name   | TEXT      | Opportunity name         |
+| category           | TEXT      | Opportunity category     |
+| opportunity_code   | TEXT      | Reference code           |
+| tracking_questions | TEXT      | Tracking metadata        |
+| learner_id         | TEXT      | Learner ID               |
+| status             | INTEGER   | Enrollment status        |
+| apply_date         | TIMESTAMP | Application date         |
 
 
 **1️⃣0️⃣ mark_opp_clean**
 
 Fuzzy-matched marketing campaigns to opportunities.
 
-| Column                  | Description              |
-| ----------------------- | ------------------------ |
-| ad_account_name         | Ad account               |
-| campaign_name           | Marketing campaign       |
-| delivery_status         | Delivery status          |
-| delivery_level          | Delivery level           |
-| reach                   | Reach                    |
-| outbound_clicks         | Outbound clicks          |
-| outbound_type           | Outbound type            |
-| result_type             | Result type              |
-| results                 | Results                  |
-| cost_per_result         | Cost per result          |
-| amount_spent_aed        | Spend (AED)              |
-| cpc_cost_per_link_click | CPC                      |
-| reporting_starts        | Reporting date           |
-| performance_flag        | Performance status       |
-| opportunity_id          | Matched opportunity      |
-| opportunity_name        | Matched opportunity name |
-| marketing_match_flag    | `matched` / `unmatched`  |
+| Column                  | Data Type | Description                                                    |
+| ----------------------- | --------- | -------------------------------------------------------------- |
+| ad_account_name         | TEXT      | Ad account                                                     |
+| campaign_name           | TEXT      | Marketing campaign                                             |
+| delivery_status         | TEXT      | Delivery status                                                |
+| delivery_level          | TEXT      | Delivery level                                                 |
+| reach                   | BIGINT    | Reach                                                          |
+| outbound_clicks         | BIGINT    | Outbound clicks                                                |
+| outbound_type           | BIGINT    | Outbound type                                                  |
+| result_type             | TEXT      | Result type                                                    |
+| results                 | BIGINT    | Results                                                        |
+| cost_per_result         | NUMERIC   | Cost per result                                                |
+| amount_spent_aed        | NUMERIC   | Spend (AED)                                                    |
+| cpc_cost_per_link_click | NUMERIC   | CPC                                                            |
+| reporting_starts        | DATE      | Reporting date                                                 |
+| campaign_month          | TEXT      |  campaign months                                               |
+| campaign_type           | TEXT      | `internship` / `competition` / `workshop` / `event` / `other`  |
+| marketing_objective     | TEXT      | `ads` / `prospecting`/ `reach` / `awareness` / `other`         | 
+| performance_flag        | TEXT      | Performance status                                             |
+| opportunity_id          | TEXT      | Matched opportunity                                            |
+| opportunity_name        | TEXT      | Matched opportunity name                                       |
+| marketing_match_flag    | TEXT      | `matched` / `unmatched`                                        |
 
 
 
