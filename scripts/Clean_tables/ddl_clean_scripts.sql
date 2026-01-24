@@ -97,7 +97,6 @@ CREATE TABLE opp_and_learner_opp_clean AS
         o.category,
         o.opportunity_code,
         o.tracking_questions,
-        o.quality_flag AS opp_flag,
 
         lof.learner_id,
         lof.status,
@@ -134,6 +133,9 @@ CREATE TABLE mark_opp_clean AS
         COALESCE(mf.amount_spent_aed, 0) AS amount_spent_aed,
         COALESCE(mf.cpc_cost_per_link_click, 0) AS cpc_cost_per_link_click,
         mf.reporting_starts,
+		COALESCE(mf.campaign_month, 'Unknown') AS campaign_month,
+		COALESCE(mf.campaign_type, 'Unknown') AS campaign_type,
+		COALESCE(mf.marketing_objective, 'Unknown') AS marketing_objective,
         COALESCE(mf.performance_flag, 'Unknown') AS performance_flag,
         o.opportunity_id,
         o.opportunity_name,
@@ -153,5 +155,3 @@ CREATE TABLE mark_opp_clean AS
 -- Indexes
 CREATE INDEX idx_moc_campaign_name ON mark_opp_clean(campaign_name);
 CREATE INDEX idx_moc_match_flag ON mark_opp_clean(marketing_match_flag);
-
-
