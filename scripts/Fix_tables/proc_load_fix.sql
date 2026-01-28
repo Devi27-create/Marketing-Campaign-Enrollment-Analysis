@@ -41,34 +41,81 @@ BEGIN
 	CREATE TABLE learner_fix AS
 	SELECT
 	    learner_id,
-	    COALESCE(NULLIF(TRIM(country),'NULL'),'Unknown') AS country,
+	
+	    COALESCE(NULLIF(TRIM(country), 'NULL'), 'Unknown') AS country,
+	
 	    COALESCE(
 	        CASE
 	            WHEN degree IN (
-	                'Graduate Student','Undergraduate Student','High School Student',
-	                'Teacher/Educator','Other Professional','Not in Education'
-	            ) THEN degree
-	        END,'Unknown'
+	                'Graduate Student',
+	                'Undergraduate Student',
+	                'High School Student',
+	                'Teacher/Educator',
+	                'Other Professional',
+	                'Not in Education'
+	            )
+	            THEN degree
+	            ELSE NULL
+	        END,
+	        'Unknown'
 	    ) AS degree,
+	
 	    COALESCE(
 	        CASE
 	            WHEN UPPER(TRIM(institution)) = 'NULL' THEN NULL
 	            WHEN institution ~ '^[A-Za-z].{3,}$'
 	                 AND institution !~ '^[0-9]+$'
-	                 AND institution NOT IN ('.','..','...','-','----')
+	                 AND institution NOT IN ('.', '..', '...', '-', '----')
 	            THEN institution
-	        END,'Unknown'
+	            ELSE NULL
+	        END,
+	        'Unknown'
 	    ) AS institution,
+	
 	    COALESCE(
 	        CASE
 	            WHEN UPPER(TRIM(major)) = 'NULL' THEN NULL
-	            WHEN major ~ '^[A-Za-z].{2,}$' THEN major
-	        END,'Unknown'
+	            WHEN major ~ '^[A-Za-z].{2,}$'
+	            THEN major
+	            ELSE NULL
+	        END,
+	        'Unknown'
 	    ) AS major,
+	
+		-- flagging
 	    CASE
-	        WHEN degree = 'Unknown' AND institution = 'Unknown' THEN 'incomplete_profile'
+	        WHEN
+	            COALESCE(
+	                CASE
+	                    WHEN degree IN (
+	                        'Graduate Student',
+	                        'Undergraduate Student',
+	                        'High School Student',
+	                        'Teacher/Educator',
+	                        'Other Professional',
+	                        'Not in Education'
+	                    )
+	                    THEN degree
+	                    ELSE NULL
+	                END,
+	                'Unknown'
+	            ) = 'Unknown'
+	        AND
+	            COALESCE(
+	                CASE
+	                    WHEN UPPER(TRIM(institution)) = 'NULL' THEN NULL
+	                    WHEN institution ~ '^[A-Za-z].{3,}$'
+	                         AND institution !~ '^[0-9]+$'
+	                         AND institution NOT IN ('.', '..', '...', '-', '----')
+	                    THEN institution
+	                    ELSE NULL
+	                END,
+	                'Unknown'
+	            ) = 'Unknown'
+	        THEN 'incomplete_profile'
 	        ELSE 'valid'
 	    END AS profile_flag
+	
 	FROM learner_raw;
 	
 	-- Indexes
@@ -103,11 +150,11 @@ BEGIN
 	    COALESCE(tracking_questions, 'None') AS tracking_questions	-- Handle 69 nulls
 	FROM opportunity_raw
 	WHERE opportunity_name IS NOT NULL;	-- Drop any fully null rows (none observed)
-
-	-- Indexes
-	CREATE INDEX idx_opp_fix_id ON opportunity_fix(opportunity_id);
-	CREATE INDEX idx_opp_fix_name ON opportunity_fix(opportunity_name);
 	
+	-- Indexes
+	CREATE INDEX idx_opportunity_fix_id ON opportunity_fix(opportunity_id);
+	CREATE INDEX idx_opportunity_fix_name ON opportunity_fix(opportunity_name);
+
 	end_time := clock_timestamp();
 	RAISE NOTICE 'opportunity_fix loaded in % seconds', EXTRACT(EPOCH FROM end_time - start_time);
 
@@ -127,24 +174,27 @@ BEGIN
 
 	CREATE TABLE learner_opp_fix AS
 	SELECT 
-	    enrollment_id AS learner_id,
-	    learner_id AS opportunity_id,
+	    enrollment_id AS learner_id,  -- Swapped: real learner
+	    learner_id AS opportunity_id,  -- Swapped: real opportunity
 	    assigned_cohort,
 	    apply_date::TIMESTAMP AS apply_date,
 	    status,
+		
+		-- flagging
 	    CASE 
-	        WHEN enrollment_id LIKE 'Opportunity#%' THEN 'invalid_placeholder'
+	        WHEN enrollment_id LIKE 'Opportunity#%' THEN 'invalid_placeholder'  -- Flag 186 bad
 	        WHEN apply_date IS NULL THEN 'missing_date'
 	        ELSE 'valid'
 	    END AS quality_flag
-	FROM learner_opportunity_raw
-	WHERE enrollment_id LIKE 'Learner#%';
-
+		
+	FROM learner_opp_raw
+	WHERE enrollment_id LIKE 'Learner#%';  -- Drop 186 invalid
+	
 	-- Indexes
 	CREATE INDEX idx_lo_fix_learner ON learner_opp_fix(learner_id);
-	CREATE INDEX idx_lo_fix_opp ON learner_opp_fix(opportunity_id);
+	CREATE INDEX idx_lo_fix_opportunity ON learner_opp_fix(opportunity_id);
 	CREATE INDEX idx_lo_fix_cohort ON learner_opp_fix(assigned_cohort);
-	
+
 	end_time := clock_timestamp();
 	RAISE NOTICE 'learner_opp_fix loaded in % seconds', EXTRACT(EPOCH FROM end_time - start_time);
 
@@ -172,24 +222,28 @@ BEGIN
 	        TO_TIMESTAMP(end_date / 1000) - 
 	        TO_TIMESTAMP(start_date / 1000)
 	    )) AS duration_days,
+		
+		-- flagging
 	    CASE
 			WHEN TO_TIMESTAMP(start_date / 1000) > CURRENT_DATE THEN 'upcoming'
 	        WHEN TO_TIMESTAMP(end_date / 1000) >= CURRENT_DATE THEN 'active'
 	        WHEN TO_TIMESTAMP(end_date / 1000) < CURRENT_DATE THEN 'completed'
 	        ELSE 'future_or_invalid'
 	    END AS status_flag,
+		
 	    CASE 
 	        WHEN size > 100000 THEN 'oversized'
 	        WHEN size < 10 THEN 'undersized'
 	        ELSE 'valid'
 	    END AS size_flag
+		
 	FROM cohort_raw
 	WHERE start_date <= end_date AND size > 0; -- Drop invalid (none observed)
 	
 	-- Indexes
 	CREATE UNIQUE INDEX idx_cohort_fix_code ON cohort_fix(cohort_code);
-	CREATE INDEX idx_cohort_fix_cohort_size ON cohort_fix(status_flag);
-	
+	CREATE INDEX idx_cohort_fix_status ON cohort_fix(status_flag);
+
 	end_time := clock_timestamp();
 	RAISE NOTICE 'cohort_fix loaded in % seconds', EXTRACT(EPOCH FROM end_time - start_time);
 
@@ -213,28 +267,31 @@ BEGIN
 	    FROM cognito_raw
 	)
 	SELECT 
-	    user_id AS learner_id,
+	    'Learner#' || user_id::TEXT AS learner_id,		-- Swapped: real learner
 	    email,
-	    COALESCE(gender, 'Unknown') AS gender,
-	    user_create_date::TIMESTAMP,
-	    user_last_modified_date::TIMESTAMP,
+	    INITCAP(COALESCE(gender, 'Unknown')) AS gender,
+	    user_create_date::TIMESTAMP AS user_create_date,
+	    user_last_modified_date::TIMESTAMP AS user_last_modified_date,
 	    birthdate,
-	    COALESCE(city, 'Unknown') AS city,
-	    COALESCE(state, 'Unknown') AS state,
+	    INITCAP(COALESCE(city, 'Unknown')) AS city,
 	    COALESCE(zip, 'Unknown') AS zip,
+	    INITCAP(COALESCE(state, 'Unknown')) AS state,
 	    EXTRACT(YEAR FROM AGE(CURRENT_DATE, birthdate)) AS age,
+	
+		-- flagging
 	    CASE 
-	        WHEN gender NOT IN ('Male','Female','Other') THEN 'invalid_gender'
+	        WHEN INITCAP(COALESCE(gender, 'Unknown')) NOT IN ('Male', 'Female', 'Other') THEN 'invalid_gender'
 	        WHEN birthdate IS NULL THEN 'missing_birthdate'
 	        ELSE 'valid'
 	    END AS quality_flag
+		
 	FROM dedup
 	WHERE rn = 1;
-
+	
 	-- Indexes
 	CREATE UNIQUE INDEX idx_cognito_fix_learner ON cognito_fix(learner_id);
 	CREATE INDEX idx_cognito_fix_email ON cognito_fix(email);
-	
+
 	end_time := clock_timestamp();
 	RAISE NOTICE 'cognito_fix loaded in % seconds', EXTRACT(EPOCH FROM end_time - start_time);
 	
@@ -315,7 +372,7 @@ BEGIN
 	            ELSE 'Other'
 	        END AS marketing_objective,
 	
-	        -- Performance flag
+	        -- flagging
 	        CASE
 	            WHEN cost_per_result > 10 THEN 'high_cost'
 	            WHEN results = 0 THEN 'no_results'
@@ -328,7 +385,7 @@ BEGIN
 	
 	SELECT *
 	FROM campaign_fix;
-
+	
 	-- Indexes
 	CREATE INDEX idx_marketing_fix_campaign ON marketing_fix(campaign_name);
 	CREATE INDEX idx_marketing_fix_date ON marketing_fix(reporting_starts);
