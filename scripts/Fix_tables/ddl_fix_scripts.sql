@@ -94,11 +94,35 @@ SELECT
 
 FROM learner_raw;
 
+-- Indexes
+CREATE UNIQUE INDEX idx_learner_fix_id ON learner_fix(learner_id);
+CREATE INDEX idx_learner_fix_profile ON learner_fix(profile_flag);
 
 ---------------------
 -- Opportunity Fixed
 ---------------------
 
+DROP TABLE IF EXISTS opportunity_fix;
+
+CREATE TABLE opportunity_fix AS
+SELECT 
+    opportunity_id,
+    TRIM(
+        REPLACE(REPLACE(opportunity_name, '%27', ''''), '+', '&') -- Fixed name's
+    ) AS opportunity_name,
+    category,
+    opportunity_code,
+    COALESCE(tracking_questions, 'None') AS tracking_questions	-- Handle 69 nulls
+FROM opportunity_raw
+WHERE opportunity_name IS NOT NULL;	-- Drop any fully null rows (none observed)
+
+-- Indexes
+CREATE INDEX idx_opportunity_fix_id ON opportunity_fix(opportunity_id);
+CREATE INDEX idx_opportunity_fix_name ON opportunity_fix(opportunity_name);
+
+------------------------------
+-- Learner Opportunity Fixed
+-----------------------------
 DROP TABLE If EXISTS learner_opp_fix;
 
 CREATE TABLE learner_opp_fix AS
@@ -119,26 +143,10 @@ SELECT
 FROM learner_opp_raw
 WHERE enrollment_id LIKE 'Learner#%';  -- Drop 186 invalid
 
-
-------------------------------
--- Learner Opportunity Fixed
------------------------------
-DROP TABLE If EXISTS learner_opp_fix;
-
-CREATE TABLE learner_opp_fix AS
-SELECT 
-    enrollment_id AS learner_id,  -- Swapped: real learner
-    learner_id AS opportunity_id,  -- Swapped: real opportunity
-    assigned_cohort,
-    apply_date::TIMESTAMP AS apply_date,
-    status,
-    CASE 
-        WHEN enrollment_id LIKE 'Opportunity#%' THEN 'invalid_placeholder'  -- Flag 186 bad
-        WHEN apply_date IS NULL THEN 'missing_date'
-        ELSE 'valid'
-    END AS quality_flag
-FROM learner_opp_raw
-WHERE enrollment_id LIKE 'Learner#%';  -- Drop 186 invalid
+-- Indexes
+CREATE INDEX idx_lo_fix_learner ON learner_opp_fix(learner_id);
+CREATE INDEX idx_lo_fix_opportunity ON learner_opp_fix(opportunity_id);
+CREATE INDEX idx_lo_fix_cohort ON learner_opp_fix(assigned_cohort);
 
 
 ----------------
@@ -176,6 +184,10 @@ SELECT
 FROM cohort_raw
 WHERE start_date <= end_date AND size > 0; -- Drop invalid (none observed)
 
+-- Indexes
+CREATE UNIQUE INDEX idx_cohort_fix_code ON cohort_fix(cohort_code);
+CREATE INDEX idx_cohort_fix_status ON cohort_fix(status_flag);
+
 
 -----------------
 -- Cognito Fixed 
@@ -209,7 +221,12 @@ SELECT
 	
 FROM dedup
 WHERE rn = 1;
-		
+
+-- Indexes
+CREATE UNIQUE INDEX idx_cognito_fix_learner ON cognito_fix(learner_id);
+CREATE INDEX idx_cognito_fix_email ON cognito_fix(email);
+
+
 -------------------
 -- Marketing Fixed
 -------------------
@@ -293,3 +310,8 @@ campaign_fix AS (
 
 SELECT *
 FROM campaign_fix;
+
+-- Indexes
+CREATE INDEX idx_marketing_fix_campaign ON marketing_fix(campaign_name);
+CREATE INDEX idx_marketing_fix_date ON marketing_fix(reporting_starts);
+
