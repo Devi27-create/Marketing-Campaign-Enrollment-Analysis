@@ -314,4 +314,5 @@ FROM campaign_fix;
 -- Indexes
 CREATE INDEX idx_marketing_fix_campaign ON marketing_fix(campaign_name);
 CREATE INDEX idx_marketing_fix_date ON marketing_fix(reporting_starts);
-
+CREATE INDEX idx_marketing_fix_camp_type ON marketing_fix(campaign_type);
+CREATE INDEX idx_marketing_fix_camp_month ON marketing_fix(campaign_month);
