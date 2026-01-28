@@ -12,7 +12,7 @@ Script Purpose:
 -- Learner Fixed 
 -----------------
 		 
-DROP TABLE IF EXISTS learner_fixed;
+DROP TABLE IF EXISTS learner_fix;
 
 CREATE TABLE learner_fix AS
 SELECT
@@ -58,6 +58,7 @@ SELECT
         'Unknown'
     ) AS major,
 
+	-- flagging
     CASE
         WHEN
             COALESCE(
@@ -93,23 +94,30 @@ SELECT
 
 FROM learner_raw;
 
+
 ---------------------
 -- Opportunity Fixed
 ---------------------
 
-DROP TABLE IF EXISTS opportunity_fix;
+DROP TABLE If EXISTS learner_opp_fix;
 
-CREATE TABLE opportunity_fix AS
+CREATE TABLE learner_opp_fix AS
 SELECT 
-    opportunity_id,
-    TRIM(
-        REPLACE(REPLACE(opportunity_name, '%27', ''''), '+', '&') -- Fixed name's
-    ) AS opportunity_name,
-    category,
-    opportunity_code,
-    COALESCE(tracking_questions, 'None') AS tracking_questions	-- Handle 69 nulls
-FROM opportunity_raw
-WHERE opportunity_name IS NOT NULL;	-- Drop any fully null rows (none observed)
+    enrollment_id AS learner_id,  -- Swapped: real learner
+    learner_id AS opportunity_id,  -- Swapped: real opportunity
+    assigned_cohort,
+    apply_date::TIMESTAMP AS apply_date,
+    status,
+	
+	-- flagging
+    CASE 
+        WHEN enrollment_id LIKE 'Opportunity#%' THEN 'invalid_placeholder'  -- Flag 186 bad
+        WHEN apply_date IS NULL THEN 'missing_date'
+        ELSE 'valid'
+    END AS quality_flag
+	
+FROM learner_opp_raw
+WHERE enrollment_id LIKE 'Learner#%';  -- Drop 186 invalid
 
 
 ------------------------------
@@ -150,17 +158,21 @@ SELECT
         TO_TIMESTAMP(end_date / 1000) - 
         TO_TIMESTAMP(start_date / 1000)
     )) AS duration_days,
+	
+	-- flagging
     CASE
 		WHEN TO_TIMESTAMP(start_date / 1000) > CURRENT_DATE THEN 'upcoming'
         WHEN TO_TIMESTAMP(end_date / 1000) >= CURRENT_DATE THEN 'active'
         WHEN TO_TIMESTAMP(end_date / 1000) < CURRENT_DATE THEN 'completed'
         ELSE 'future_or_invalid'
     END AS status_flag,
+	
     CASE 
         WHEN size > 100000 THEN 'oversized'
         WHEN size < 10 THEN 'undersized'
         ELSE 'valid'
     END AS size_flag
+	
 FROM cohort_raw
 WHERE start_date <= end_date AND size > 0; -- Drop invalid (none observed)
 
@@ -179,19 +191,22 @@ WITH dedup AS (
 SELECT 
     'Learner#' || user_id::TEXT AS learner_id,		-- Swapped: real learner
     email,
-    COALESCE(gender, 'Unknown') AS gender,
+    INITCAP(COALESCE(gender, 'Unknown')) AS gender,
     user_create_date::TIMESTAMP AS user_create_date,
     user_last_modified_date::TIMESTAMP AS user_last_modified_date,
     birthdate,
-    COALESCE(city, 'Unknown') AS city,
+    INITCAP(COALESCE(city, 'Unknown')) AS city,
     COALESCE(zip, 'Unknown') AS zip,
-    COALESCE(state, 'Unknown') AS state,
+    INITCAP(COALESCE(state, 'Unknown')) AS state,
     EXTRACT(YEAR FROM AGE(CURRENT_DATE, birthdate)) AS age,
+
+	-- flagging
     CASE 
-        WHEN gender NOT IN ('Male', 'Female', 'Other') THEN 'invalid_gender'
+        WHEN INITCAP(COALESCE(gender, 'Unknown')) NOT IN ('Male', 'Female', 'Other') THEN 'invalid_gender'
         WHEN birthdate IS NULL THEN 'missing_birthdate'
         ELSE 'valid'
     END AS quality_flag
+	
 FROM dedup
 WHERE rn = 1;
 		
@@ -265,7 +280,7 @@ campaign_fix AS (
             ELSE 'Other'
         END AS marketing_objective,
 
-        -- Performance flag
+        -- flagging
         CASE
             WHEN cost_per_result > 10 THEN 'high_cost'
             WHEN results = 0 THEN 'no_results'
@@ -278,4 +293,3 @@ campaign_fix AS (
 
 SELECT *
 FROM campaign_fix;
-
