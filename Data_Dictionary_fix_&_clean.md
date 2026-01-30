@@ -1,6 +1,6 @@
 ## Data Dictionary
 
-### Marketing Campaign Enrollment Analysis
+### Marketing and Enrollment Analysis
 
 ---
 #### Data Model Overview
@@ -222,14 +222,3 @@ Fuzzy-matched marketing campaigns to opportunities.
 | opportunity_name        | TEXT      | Matched opportunity name                                       |
 | marketing_match_flag    | TEXT      | `matched` / `unmatched`                                        |
 
-
-
-## Notes
-
-- All _clean tables represent analytics-ready datasets
-
-- Raw tables remain unchanged for traceability
-
-- Quality flags allow downstream filtering without data loss
-
-- Designed for BI tools, reporting, and ML-ready analysis
