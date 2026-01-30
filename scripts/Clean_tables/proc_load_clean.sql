@@ -84,7 +84,7 @@ BEGIN
 	CREATE INDEX idx_lcc_country ON learner_cog_clean(country);
 
     end_time := clock_timestamp();
-    RAISE NOTICE 'learner_cognito_clean loaded in % seconds',
+    RAISE NOTICE 'learner_cog_clean loaded in % seconds',
         EXTRACT(EPOCH FROM end_time - start_time);
 
     -- =====================================================
@@ -147,7 +147,7 @@ BEGIN
 	        o.opportunity_code,
 	        o.tracking_questions,
 	        o.quality_flag AS opp_flag,
-	
+
 	        lof.learner_id,
 	        lof.status,
 	        lof.apply_date
@@ -160,7 +160,7 @@ BEGIN
 	CREATE INDEX idx_oloc_apply_date ON opp_and_learner_opp_clean(apply_date);
 
     end_time := clock_timestamp();
-    RAISE NOTICE 'opportunity_and_learner_opp_clean loaded in % seconds',
+    RAISE NOTICE 'opp_and_learner_opp_clean loaded in % seconds',
         EXTRACT(EPOCH FROM end_time - start_time);
 
     -- =====================================================
