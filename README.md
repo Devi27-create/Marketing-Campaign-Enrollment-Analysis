@@ -1,236 +1,305 @@
-# Marketing Campaign Enrollment Analysis
+# Marketing Campaign & Enrollment Analytics Platform
 
 ## Overview
 
-The Marketing Campaign Enrollment Analysis project is an end-to-end data engineering and analytics pipeline designed to consolidate, clean, enrich, and analyze marketing campaign performance alongside learner enrollment data.
+This project implements a layered data warehouse and analytics platform designed to analyze the relationship between marketing campaigns, learner enrollments, opportunities, and cohorts.
 
-The system transforms multiple raw operational datasets into structured, analytics-ready tables, enabling accurate campaign performance tracking, learner engagement analysis, and cohort-level insights.
+The system transforms raw operational data into business-ready analytical views, enabling accurate reporting and dashboarding in Looker Studio.
 
-This project emphasizes:
- 
-- Data quality enforcement
-- Scalable transformations
-- Auditable enrichment logic
-- Analytics-ready dimensional modeling
+The solution follows modern data engineering best practices:
 
-## Architecture & Data Flow
+- Layered architecture (Raw → Fixed → Clean → Business)
 
-The pipeline follows a layered data model:
+- Data quality enforcement and auditability
 
-     Raw
-      ↓
-     Fix
-      ↓
-    Clean
-      ↓
-Master Analytics
-      ↓
-  Dashboard
+- Entity conformance before analytics
 
+- BI-tool-friendly modeling
 
-Each layer is designed to be:
+---
 
-- Rebuildable
+## Business Use Cases
 
-- Auditable
+- Measure marketing campaign performance (reach → clicks → conversions)
 
-- Isolated from downstream logic changes
+- Attribute enrollments and opportunities to campaigns
 
-## Datasets Used
-### 1️⃣ Learner
+- Analyze learner demographics and enrollment behavior
 
-Contains demographic and academic information for learners.
+- Compare campaign efficiency across objectives and time
 
-- Learner ID
+- Power executive dashboards in Looker Studio
 
-- Country
+---
 
-- Degree
+## Data Architecture
 
-- Institution
+This project uses a layered data warehouse design to ensure data quality, traceability, and scalability.
 
-- Major
+### 🔹 Layered Architecture Diagram
 
-Used to understand learner distribution, educational background, and profile completeness.
+**Architecture Summary**
 
-### 2️⃣ Opportunity
+**Raw Layer:** Source-aligned ingestion (no transformations)
 
-Captures details of programs, courses, challenges, and internships.
+**Fixed Layer:** Cleansing, standardization, deduplication, quality flags
 
-- Opportunity ID
+**Clean Layer:** Entity composition with controlled joins
 
-- Opportunity Name
+**Business Layer:** Analytics-ready master views
 
-- Category
+**Consumption:** Looker Studio dashboards (read-only)
 
-- Opportunity Code
+![Layered Architecture]()
 
-- Tracking Questions
+**Architecture Principles**
+- Full-load ingestion using CSV source files
+- Truncate & insert strategy for Raw and Fixed layers
+- Conformed entities created in Clean layer
+- Business Layer exposes read-only master analytics views
+- Consumption via Looker Studio dashboards
 
-Supports campaign-to-opportunity attribution and enrollment analysis.
+---
 
-### 3️⃣ Learner Opportunity
+## 🔹 Data Flow Diagram
 
-- Represents enrollment activity.
+**Key Concepts**
 
-- Enrollment ID
+- Each dataset is independently fixed before composition
 
-- Learner ID
+- Joins only occur after data quality validation
 
-- Assigned Cohort
+- Business views are isolated from transformation logic
 
-- Application Date
+![Data Flow Diagram]()
 
-- Enrollment Status
+**Key Highlights**
+- Raw Layer stores source-aligned tables with no transformations
+- Fixed Layer handles standardization, deduplication, and data quality flags
+- Clean Layer composes entities through controlled joins
+- Business Layer exposes analytics-ready views for BI tools
 
-Tracks learner engagement across opportunities and campaigns.
+---
 
-### 4️⃣ Cohort
+## Source Datasets
 
-Defines structured learning groups.
+| Dataset             | Description                        |
+| ------------------- | ---------------------------------- |
+| Learner             | Learner profiles and demographics  |
+| Opportunity         | Program / course / event metadata  |
+| Learner Opportunity | Enrollment and application records |
+| Cohort              | Cohort structure and lifecycle     |
+| Cognito             | User authentication & profile data |
+| Marketing Campaign  | Campaign performance metrics       |
 
-- Cohort ID
+---
 
-- Cohort Code
+## Layer Breakdown
 
-- Start Date
+### 🟤 Raw Layer
 
-- End Date
+- Tables mirror source files exactly
 
-- Cohort Size
+- No transformations applied
 
-Used for time-based analysis, cohort lifecycle tracking, and capacity insights.
+- Purpose: traceability & recovery
 
-### 5️⃣  Cognito
+**Tables**
 
-User account and demographic data sourced from authentication systems.
+- learner_raw
 
-- User ID
+- opportunity_raw
 
-- Email
+- learner_opportunity_raw
 
-- Gender
+- cohort_raw
 
-- Birthdate
+- cognito_raw
 
-- Location (City, State, Zip)
+- marketing_raw
 
-- Account creation & modification timestamps
+### 🟡 Fixed Layer
 
-Enables user-level segmentation and demographic analysis.
+- Data standardization and correction
 
-### 6️⃣  Marketing Campaign
+- Deduplication
 
-- Marketing performance metrics across platforms.
+- Type casting
 
-- Ad Account Name
+- Quality flags
 
-- Campaign Name
+**Examples**
 
-- Delivery Status & Level
+- Deduplicated campaigns by spend & date
 
-- Reach
+- Standardized campaign naming
 
-- Clicks & Results
+- Validated learner profiles
 
-- Cost Metrics (CPC, Cost per Result, Spend)
+**Tables**
 
-- Reporting Start Date
+- learner_fix
 
-Used to evaluate campaign effectiveness and ROI.
+- opportunity_fix
 
-## Data Cleaning & Standardization
+- learner_opp_fix
 
-Raw datasets are transformed into fixed then clean tables using a PostgreSQL stored procedure:
+- cohort_fix
 
-### Key transformations include:
+- cognito_fix
 
-- Null and placeholder value normalization
+- marketing_fix
 
-- Text standardization (trimming, decoding, validation)
+### 🔵 Clean Layer
 
-- Deduplication using window functions
+- Entity composition
 
-- Derived attributes (age, cohort duration, campaign month)
+- Conformed keys
 
-- Data quality flags for auditing
+- Controlled joins
 
-All transformations are set-based, ensuring scalability and performance.
+- Analytics-safe defaults
 
-## Marketing Campaign Enrichment
+**Tables**
 
-Marketing campaigns are enriched with derived attributes:
+- learner_cog_clean
 
-- Campaign Month (non-positional keyword detection)
+- coh_and_learner_opp_clean
 
-- Campaign Type (Competition, Internship, Course, etc.)
+- opp_and_learner_opp_clean
 
-- Marketing Objective (Awareness, Prospecting, Leads, Reach)
+- mark_opp_clean
 
-- Performance Flags (high cost, no results, valid)
+### 🟢 Business Layer
 
-Campaign names are preserved in raw form to maintain traceability.
+- Read-only analytics views
 
-## Fuzzy Matching & Audit Layer
+- BI-optimized schema
 
-Due to inconsistent naming conventions between campaigns and opportunities, fuzzy matching is used to link them:
+- Derived metrics included
 
-- PostgreSQL pg_trgm extension for similarity scoring
+**Primary Views**
 
-- Normalized comparison fields
+- master_marketing_analytics
 
-- Best-match selection per campaign
+- campaign_performance_mart
 
-- Confidence scoring (High / Medium / Low)
+- marketing funnel
 
-An audit table captures low-confidence matches for manual review, ensuring transparency and control.
+---
 
-## Automation
+## Master Analytics View
+`master_marketing_analytics`
 
-All fixed-layer transformations are orchestrated via a PostgreSQL stored procedure:
+Grain: One row per `Learner × Opportunity × Campaign`
 
-- Rebuilds all cleaned tables
+**Purpose**
 
-- Logs execution time per dataset
+- Single source of truth for dashboards
 
-- Fails safely with error reporting
+- Handles deduplication at analytics level
 
-This makes the pipeline reproducible and production-ready.
+- Compatible with Looker Studio aggregations
 
-## Dashboard
+**Includes**
 
-The processed data feeds an analytics dashboard that provides insights into:
+- Learner demographics
 
-- Campaign performance
+- Opportunity & cohort context
 
-- Learner enrollment trends
+- Marketing performance
 
-- Opportunity engagement
+- Derived KPIs
 
-- Cohort lifecycle analysis
+## Campaign Performance Mart
+`campaign_performance_mart`
 
-## 📊 Dashboard Preview:
+Grain: One row per `Campaign × Date`
 
-Dashboard screenshot: [Alt]()
+**Purpose**
 
-## Tech Stack
+- Executive-level campaign reporting
 
-- Database: PostgreSQL
+## Marketing Funnel
+`marketing funnel`
 
-- Data Modeling: Star-schema inspired fact & dimension design
+**Purpose**
 
-- ETL: SQL / PL-pgSQL (set-based transformations)
+- Create Funnel stage & stage value for dashboard
 
-- Text Matching: pg_trgm fuzzy matching
+---
 
-- Visualization: BI dashboard (PDF preview included)
+## Data Quality & Auditing
 
-## Key Takeaways
+Quality checks applied across layers:
 
-- Built with real-world data inconsistency in mind
+- Duplicate detection
 
-- Emphasizes auditability over blind automation
+- Null handling with defaults
 
-- Designed to scale from analysis to production
+- Invalid profile filtering
 
-- Clean separation between raw, fixed, and enriched layers
+- Campaign matching flags
+
+- Cost and result sanity checks
+
+Each layer promotes only validated data forward.
+
+---
+
+## Dashboarding (Looker Studio)
+
+- Connected via Google Sheet/ CSV export
+
+- Numeric fields explicitly cast
+
+- Metrics pre-aggregated where required
+
+- Funnel modeled using multiple charts (Looker limitation)
+
+---
+
+## Technologies Used
+
+- PostgreSQL
+
+- SQL (CTEs, window functions, regex)
+
+- Looker Studio
+
+- CSV ingestion
+
+- GitHub
+
+---
+
+## Repository Structure
+
+├── sql/
+│   ├── raw/
+│   ├── fixed/
+│   ├── clean/
+│   └── business/
+├── docs/
+|   ├── scripts.sql
+│   ├── data_flow_diagram.png
+│   ├── layered_architecture.png
+│   ├── data_dictionary_fix_&clean.md
+|   ├── data_dictionary_business_layer.md
+|   └── sql_quaeries.sql
+├── dashboards/
+│   └── looker_wireframe.pdf
+└── README.md
+
+---
+## Author
+
+Built as an end-to-end analytics engineering project demonstrating:
+
+- Data modeling
+
+- SQL transformations
+
+- BI-ready architecture
+
+- Dashboard enablement
