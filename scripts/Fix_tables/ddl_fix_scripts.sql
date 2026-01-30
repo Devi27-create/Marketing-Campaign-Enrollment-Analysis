@@ -259,7 +259,7 @@ campaign_fix AS (
         COALESCE(cpc_cost_per_link_click, 0) AS cpc_cost_per_link_click,
         reporting_starts::DATE AS reporting_starts,
 
-        -- Month
+        -- Campaign Month
         CASE
             WHEN campaign_name ILIKE '%jan%' THEN 'January'
             WHEN campaign_name ILIKE '%feb%' THEN 'February'
