@@ -4,6 +4,7 @@ master_marketing_analytics
 Grain: Learner × Opportunity × Campaign
 
 **1️⃣ Learner Fields**
+
 | Column      | Type | Description               |
 | ----------- | ---- | ------------------------- |
 | learner_key | INT  | Surrogate learner key     |
@@ -18,7 +19,9 @@ Grain: Learner × Opportunity × Campaign
 | institution | TEXT | Institution               |
 | major       | TEXT | Major                     |
 
+
 **2️⃣ Opportunity Fields**
+
 | Column               | Type | Description      |
 | -------------------- | ---- | ---------------- |
 | opportunity_id       | TEXT | Opportunity ID   |
@@ -28,6 +31,7 @@ Grain: Learner × Opportunity × Campaign
 
 
 **3️⃣ Enrollment Fields**
+
 | Column            | Type | Description             |
 | ----------------- | ---- | ----------------------- |
 | enrollment_status | TEXT | Application status      |
@@ -36,6 +40,7 @@ Grain: Learner × Opportunity × Campaign
 
 
 **4️⃣ Cohort Fields**
+
 | Column            | Type | Description     |
 | ----------------- | ---- | --------------- |
 | cohort_id         | TEXT | Cohort ID       |
@@ -49,6 +54,7 @@ Grain: Learner × Opportunity × Campaign
 
 
 **5️⃣ Marketing Fieldss**
+
 | Column                  | Type    | Description                      |
 | ----------------------- | ------- | -------------------------------- |
 | ad_account_name         | TEXT    | Ad account                       |
@@ -70,24 +76,12 @@ Grain: Learner × Opportunity × Campaign
 
 
 **6️⃣ Derived Metrics**
-| Column                  | Type    | Description                      |
-| ----------------------- | ------- | -------------------------------- |
-| ad_account_name         | TEXT    | Ad account                       |
-| campaign_name           | TEXT    | Campaign name                    |
-| campaign_month          | TEXT    | Detected month                   |
-| campaign_type           | TEXT    | Course / Event / Internship etc. |
-| marketing_objective     | TEXT    | Awareness / Leads / Conversions  |
-| delivery_status         | TEXT    | Delivery status                  |
-| delivery_level          | TEXT    | Delivery granularity             |
-| reach                   | INT     | Reach                            |
-| outbound_clicks         | INT     | Clicks                           |
-| results                 | INT     | Results                          |
-| cost_per_result         | NUMERIC | Cost per result                  |
-| amount_spent_aed        | NUMERIC | Spend                            |
-| cpc_cost_per_link_click | NUMERIC | CPC                              |
-| reporting_starts        | DATE    | Reporting date                   |
-| performance_flag        | TEXT    | Cost/result quality              |
-| marketing_match_flag    | TEXT    | Campaign ↔ Opportunity match     |
+
+| Column                      | Type    | Description         |
+| --------------------------- | ------- | ------------------- |
+| derived_cost_per_conversion | NUMERIC | Spend ÷ results     |
+| conversion_rate_pct         | NUMERIC | Results ÷ reach (%) |
+
 
 **7️⃣campaign_performance_mart**
 Grain: Campaign × Reporting Date
@@ -104,6 +98,7 @@ Grain: Campaign × Reporting Date
 | total_spend         | NUMERIC | Total spend        |
 | avg_cpc             | NUMERIC | Avg CPC            |
 | conversion_rate     | NUMERIC | Results ÷ reach    |
+
 
 **8️⃣Learner funnel**
 | Column              | Type    | Description        |
