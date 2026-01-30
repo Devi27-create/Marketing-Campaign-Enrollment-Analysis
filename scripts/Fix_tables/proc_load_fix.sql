@@ -308,6 +308,8 @@ BEGIN
 
 	DROP TABLE IF EXISTS marketing_fix;
 
+	DROP TABLE IF EXISTS marketing_fix;
+
 	CREATE TABLE marketing_fix AS
 	WITH dedup AS (
 	    SELECT *,
@@ -334,7 +336,7 @@ BEGIN
 	        COALESCE(cpc_cost_per_link_click, 0) AS cpc_cost_per_link_click,
 	        reporting_starts::DATE AS reporting_starts,
 	
-	        -- Month
+	        -- Campaign Month
 	        CASE
 	            WHEN campaign_name ILIKE '%jan%' THEN 'January'
 	            WHEN campaign_name ILIKE '%feb%' THEN 'February'
@@ -348,27 +350,35 @@ BEGIN
 	            WHEN campaign_name ILIKE '%oct%' THEN 'October'
 	            WHEN campaign_name ILIKE '%nov%' THEN 'November'
 	            WHEN campaign_name ILIKE '%dec%' THEN 'December'
-	            ELSE NULL
+	            ELSE 'Unknown'
 	        END AS campaign_month,
 	
 	        -- Campaign type
 	        CASE
-	            WHEN campaign_name ILIKE '%competition%' OR campaign_name ILIKE '%challenge%' THEN 'Competition'
+	            WHEN campaign_name ILIKE '%competition%' 
+				  OR campaign_name ILIKE '%challenge%' THEN 'Competition'
 	            WHEN campaign_name ILIKE '%internship%' THEN 'Internship'
 	            WHEN campaign_name ILIKE '%masterclass%' THEN 'Masterclass'
 	            WHEN campaign_name ILIKE '%course%' THEN 'Course'
 	            WHEN campaign_name ILIKE '%workshop%' THEN 'Workshop'
 	            WHEN campaign_name ILIKE '%event%' THEN 'Event'
+				WHEN campaign_name ILIKE '%awareness%' THEN 'Awareness' 
 	            ELSE 'Other'
 	        END AS campaign_type,
 	
 	        -- Marketing objective
-	        CASE
-	            WHEN campaign_name ILIKE '%awareness%' THEN 'Awareness'
+			CASE
+	            WHEN campaign_name ILIKE '%awareness%' 
+	              OR campaign_name ILIKE '%reach%' 
+	              OR campaign_name ILIKE '%brand%' THEN 'Awareness'
 	            WHEN campaign_name ILIKE '%prospecting%' THEN 'Prospecting'
-	            WHEN campaign_name ILIKE '%ads%' THEN 'Ads'
-	            WHEN campaign_name ILIKE '%leads%' THEN 'Leads'
-	            WHEN campaign_name ILIKE '%reach%' THEN 'Reach'
+	            WHEN campaign_name ILIKE '%leads%' 
+	              OR campaign_name ILIKE '%sign ups%' THEN 'Leads'
+	            WHEN campaign_name ILIKE '%apply%' 
+	              OR campaign_name ILIKE '%enroll%' 
+	              OR campaign_name ILIKE '%internship%' THEN 'Conversions'
+	            WHEN campaign_name ILIKE '%website%' 
+	              OR campaign_name ILIKE '%click%' THEN 'Traffic'
 	            ELSE 'Other'
 	        END AS marketing_objective,
 	
