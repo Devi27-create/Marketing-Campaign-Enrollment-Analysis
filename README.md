@@ -17,15 +17,15 @@ This project emphasizes:
 
 The pipeline follows a layered data model:
 
-Raw Data
-   ↓
-Fixed Tables
-   ↓
-Cleaned 
-   ↓
-Enriched Marketing & Enrollment Views
-   ↓
-Analytics / Dashboard
+     Raw
+      ↓
+     Fix
+      ↓
+    Clean
+      ↓
+Master Analytics
+      ↓
+  Dashboard
 
 
 Each layer is designed to be:
