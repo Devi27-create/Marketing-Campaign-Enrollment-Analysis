@@ -209,7 +209,7 @@ Grain: One row per `Learner × Opportunity × Campaign`
 
 - Marketing performance
 
-- Derived KPIs
+- Derived KPIs (conversion rate, cost per conversion)
 
 ## Campaign Performance Mart
 `campaign_performance_mart`
@@ -219,43 +219,44 @@ Grain: One row per `Campaign × Date`
 **Purpose**
 
 - Executive-level campaign reporting
+- Performance trend analysis
+- Cost and conversion efficiency tracking
 
 ## Marketing Funnel
 `marketing funnel`
 
 **Purpose**
 
-- Create Funnel stage & stage value for dashboard
+- Represents funnel stages and values for dashboarding
+- Enables visualization of:
+  - Reach
+  - Clicks
+  - Results (conversions)
+
+Due to Looker Studio limitations, funnel stages are modeled using structured metrics rather than a single multi-metric funnel object.
 
 ---
 
 ## Data Quality & Auditing
 
-Quality checks applied across layers:
-
-- Duplicate detection
-
-- Null handling with defaults
-
-- Invalid profile filtering
-
-- Campaign matching flags
-
+Quality checks are applied consistently across layers: 
+- Duplicate detection and removal
+- Null handling with business-safe defaults
+- Invalid learner profile filtering
+- Campaign ↔ opportunity matching flags
 - Cost and result sanity checks
 
-Each layer promotes only validated data forward.
+Only validated data is promoted forward at each layer.
 
 ---
 
 ## Dashboarding (Looker Studio)
 
-- Connected via Google Sheet/ CSV export
+- Connected via Google Sheets/ CSV export
 
-- Numeric fields explicitly cast
-
+- Numeric fields explicitly cast for BI compatibility
 - Metrics pre-aggregated where required
-
-- Funnel modeled using multiple charts (Looker limitation)
+- Funnel visualizations implemented using multiple charts
 
 ---
 
@@ -263,7 +264,7 @@ Each layer promotes only validated data forward.
 
 - PostgreSQL
 
-- SQL (CTEs, window functions, regex)
+- SQL (CTEs, window functions, regex, deduplication logic)
 
 - Looker Studio
 
@@ -281,12 +282,12 @@ Each layer promotes only validated data forward.
 │   ├── clean/
 │   └── business/
 ├── docs/
-|   ├── scripts.sql
+│   ├── scripts.sql
 │   ├── data_flow_diagram.png
 │   ├── layered_architecture.png
-│   ├── data_dictionary_fix_&clean.md
-|   ├── data_dictionary_business_layer.md
-|   └── sql_quaeries.sql
+│   ├── data_dictionary_fix_and_clean.md
+│   ├── data_dictionary_business_layer.md
+│   └── sql_queries.sql
 ├── dashboards/
 │   └── looker_wireframe.pdf
 └── README.md
@@ -296,10 +297,12 @@ Each layer promotes only validated data forward.
 
 Built as an end-to-end analytics engineering project demonstrating:
 
-- Data modeling
+- Data modeling and warehouse design
 
-- SQL transformations
+- SQL-based transformations
 
-- BI-ready architecture
+- Data quality enforcement
 
-- Dashboard enablement
+- BI-ready analytics views
+
+- Dashboard enablement using Looker Studio
