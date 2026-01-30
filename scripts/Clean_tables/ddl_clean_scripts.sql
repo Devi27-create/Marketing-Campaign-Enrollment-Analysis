@@ -59,9 +59,9 @@ CREATE INDEX idx_lcc_country ON learner_cog_clean(country);
 -- Cohort & Learner Opportunity Clean
 -- =======================================
 
-DROP TABLE IF EXISTS cohort_and_learner_opp_clean;
+DROP TABLE IF EXISTS coh_and_learner_opp_clean;
 
-CREATE TABLE cohort_and_learner_opp_clean AS
+CREATE TABLE coh_and_learner_opp_clean AS
     SELECT
         lof.learner_id,
         cf.cohort_id,
@@ -79,9 +79,9 @@ CREATE TABLE cohort_and_learner_opp_clean AS
         ON lof.assigned_cohort = cf.cohort_code;
 
 -- Indexes
-CREATE INDEX idx_cloc_learner_id ON cohort_and_learner_opp_clean(learner_id);
-CREATE INDEX idx_cloc_cohort_code ON cohort_and_learner_opp_clean(cohort_code);
-CREATE INDEX idx_cloc_assigned_cohort ON cohort_and_learner_opp_clean(assigned_cohort);
+CREATE INDEX idx_cloc_learner_id ON coh_and_learner_opp_clean(learner_id);
+CREATE INDEX idx_cloc_cohort_code ON coh_and_learner_opp_clean(cohort_code);
+CREATE INDEX idx_cloc_assigned_cohort ON coh_and_learner_opp_clean(assigned_cohort);
 
 
 -- =======================================
