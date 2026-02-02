@@ -84,8 +84,6 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 | Cognito             | User authentication & profile data |
 | Marketing Campaign  | Campaign performance metrics       |
 
----
-
 ## Layer Breakdown
 
 ### 🟤 Raw Layer
@@ -181,7 +179,6 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 **Screenshot:**
 
 ![Data Flow Diagram](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Data%20Flow%20Diagram(learner_db).drawio.png)
-
 
 ---
 
