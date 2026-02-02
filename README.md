@@ -58,7 +58,9 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 - Consumption via Looker Studio dashboards
 
 **Screenshot:**
+
 ![Layered Architecture](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Layered%20Data%20Warehouse%20Architecture%20(Raw%20%E2%86%92%20Fixed%20%E2%86%92%20Clean%20%E2%86%92%20Final)%20(Learner%20Dataset).drawio.png)
+
 ---
 
 ## 🔹 Data Flow Diagram
@@ -70,17 +72,6 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 - Joins only occur after data quality validation
 
 - Business views are isolated from transformation logic
-
-**Key Highlights**
-- Raw Layer stores source-aligned tables with no transformations
-- Fixed Layer handles standardization, deduplication, and data quality flags
-- Clean Layer composes entities through controlled joins
-- Business Layer exposes analytics-ready views for BI tools
-
-**Screenshot:**
-![Data Flow Diagram](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Data%20Flow%20Diagram(learner_db).drawio.png)
-
----
 
 ## Source Datasets
 
@@ -186,6 +177,11 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 - campaign_performance_mart
 
 - marketing funnel
+
+**Screenshot:**
+
+![Data Flow Diagram](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Data%20Flow%20Diagram(learner_db).drawio.png)
+
 
 ---
 
