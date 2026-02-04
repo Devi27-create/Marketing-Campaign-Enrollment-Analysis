@@ -127,8 +127,8 @@ DROP TABLE If EXISTS learner_opp_fix;
 
 CREATE TABLE learner_opp_fix AS
 SELECT 
-    enrollment_id AS learner_id,  -- Swapped: real learner
-    learner_id AS opportunity_id,  -- Swapped: real opportunity
+    enrollment_id AS learner_id,  -- Swapped 'real learner'
+    learner_id AS opportunity_id,  -- Swapped 'real opportunity'
     assigned_cohort,
     apply_date::TIMESTAMP AS apply_date,
     status,
@@ -159,8 +159,8 @@ CREATE TABLE cohort_fix AS
 SELECT 
     cohort_id,
     cohort_code,
-    TO_TIMESTAMP(start_date / 1000) AT TIME ZONE 'IST' AS start_date,
-    TO_TIMESTAMP(end_date / 1000) AT TIME ZONE 'IST' AS end_date,
+    TO_TIMESTAMP(start_date / 1000) AT TIME ZONE 'UTC' AS start_date,
+    TO_TIMESTAMP(end_date / 1000) AT TIME ZONE 'UTC' AS end_date,
     size AS cohort_size,                           
     EXTRACT(DAY FROM (
         TO_TIMESTAMP(end_date / 1000) - 
