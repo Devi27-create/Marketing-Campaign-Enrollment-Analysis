@@ -18,6 +18,8 @@ Usage Example:
 ============================================================================================================================
 */
 
+------>> FIX DATA STORE PROCEDURE <<------
+
 CREATE OR REPLACE PROCEDURE Learner_DB_Fixed_Dataset()
 LANGUAGE plpgsql
 AS $$
@@ -215,8 +217,8 @@ BEGIN
 	SELECT 
 	    cohort_id,
 	    cohort_code,
-	    TO_TIMESTAMP(start_date / 1000) AT TIME ZONE 'IST' AS start_date,
-	    TO_TIMESTAMP(end_date / 1000) AT TIME ZONE 'IST' AS end_date,
+	    TO_TIMESTAMP(start_date / 1000) AT TIME ZONE 'UTC' AS start_date,
+	    TO_TIMESTAMP(end_date / 1000) AT TIME ZONE 'UTC' AS end_date,
 	    size AS cohort_size,                           
 	    EXTRACT(DAY FROM (
 	        TO_TIMESTAMP(end_date / 1000) - 
@@ -305,8 +307,6 @@ BEGIN
 	RAISE NOTICE '----------------------------------------------------------------------------------';
     RAISE NOTICE 'Loading marketing_fixed table';
     RAISE NOTICE '----------------------------------------------------------------------------------';
-
-	DROP TABLE IF EXISTS marketing_fix;
 
 	DROP TABLE IF EXISTS marketing_fix;
 
