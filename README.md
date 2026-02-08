@@ -1,42 +1,34 @@
-# Marketing Campaign & Enrollment Analytics Platform
+# Marketing Campaign & Enrollment Analytics Project
 
 ## Overview
 
-This project implements a layered data warehouse and analytics platform designed to analyze the relationship between marketing campaigns, learner enrollments, opportunities, and cohorts.
+This project implements an end-to-end analytics engineering pipeline to analyze the relationship between marketing campaigns, learner enrollments, opportunities, and cohorts.
 
-The system transforms raw operational data into business-ready analytical views, enabling accurate reporting and dashboarding in Looker Studio.
+Raw operational data is transformed through a layered data warehouse architecture into business-ready analytical views, which power an interactive Looker Studio dashboard for marketing and enrollment performance analysis.
 
-The solution follows modern data engineering best practices:
+The project demonstrates real-world analytics engineering practices including data modeling, quality enforcement, auditability, and BI-friendly design.
 
-- Layered architecture (Raw → Fixed → Clean → Business)
-
-- Data quality enforcement and auditability
-
-- Entity conformance before analytics
-
-- BI-tool-friendly modeling
-
----
 
 ## Business Use Cases
 
-- Measure marketing campaign performance (reach → clicks → conversions)
+- Measure marketing effectiveness from reach → conversions
 
-- Attribute enrollments and opportunities to campaigns
+- Attribute learner enrollments to marketing campaigns
 
-- Analyze learner demographics and enrollment behavior
+- Analyze campaign efficiency by type, objective, and time
 
-- Compare campaign efficiency across objectives and time
+- Understand enrollment patterns across opportunities and cohorts
 
-- Power executive dashboards in Looker Studio
+- Enable executive and analytical reporting in Looker Studio
 
----
 
-## Data Architecture
+## Layered Data Warehouse Architecture
 
-This project uses a layered data warehouse design to ensure data quality, traceability, and scalability.
+This project follows a four-layer warehouse design to ensure data quality, scalability, and traceability.
 
-### 🔹 Layered Architecture Diagram
+### 🔹 Architecture Diagram
+
+Raw → Fixed → Clean → Business → Consumption
 
 **Architecture Summary**
 
@@ -46,9 +38,9 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 
 **Clean Layer:** Entity composition with controlled joins
 
-**Business Layer:** Analytics-ready master views
+**Business Layer:** Analytics-ready views
 
-**Consumption:** Looker Studio dashboards (read-only)
+**Consumption:** Looker Studio dashboards
 
 **Architecture Principles**
 - Full-load ingestion using CSV source files
@@ -61,28 +53,31 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 
 ![Layered Architecture](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Layered%20Data%20Warehouse%20Architecture%20(Raw%20%E2%86%92%20Fixed%20%E2%86%92%20Clean%20%E2%86%92%20Final)%20(Learner%20Dataset).drawio.png)
 
----
 
-## 🔹 Data Flow Diagram
+## 🔹 Data Flow Overview
 
-**Key Concepts**
+Each dataset is independently validated and standardized before being joined, preventing data contamination and double counting.
 
-- Each dataset is independently fixed before composition
+**Key Principles**
 
-- Joins only occur after data quality validation
-
-- Business views are isolated from transformation logic
+- No joins in Raw or Fixed layers
+- Quality flags applied before composition
+- Business logic isolated from transformation logic
+- BI tools consume views only, never transformation tables
 
 ## Source Datasets
 
-| Dataset             | Description                        |
-| ------------------- | ---------------------------------- |
-| Learner             | Learner profiles and demographics  |
-| Opportunity         | Program / course / event metadata  |
-| Learner Opportunity | Enrollment and application records |
-| Cohort              | Cohort structure and lifecycle     |
-| Cognito             | User authentication & profile data |
-| Marketing Campaign  | Campaign performance metrics       |
+- **Learner:** learner profiles and demographics
+
+- **Opportunity:** programs, courses, events
+
+- **Learner Opportunity:** enrollment and application records
+
+- **Cohort:** cohort lifecycle and sizing
+
+- **Cognito:** user identity and profile data
+
+- **Marketing Campaign:** campaign performance metrics
 
 ## Layer Breakdown
 
@@ -112,9 +107,9 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 
 - Data standardization and correction
 
-- Deduplication
+- Deduplication using window functions
 
-- Type casting
+- Null handling and Type casting
 
 - Quality flags
 
@@ -160,7 +155,7 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 
 - mark_opp_clean
 
-### 🟢 Business Layer
+### 🟢 Business Layer (Analytics View)
 
 - Read-only analytics views
 
@@ -168,22 +163,8 @@ This project uses a layered data warehouse design to ensure data quality, tracea
 
 - Derived metrics included
 
-**Primary Views**
-
-- master_marketing_analytics
-
-- campaign_performance_mart
-
-- marketing funnel
-
-**Screenshot:**
-
-![Data Flow Diagram](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Data%20Flow%20Diagram(learner_db).drawio.png)
-
----
-
-## Master Analytics View
-`master_marketing_analytics`
+**Analytic View:** 
+`master_marketing_and_enrollment`
 
 Grain: One row per `Learner × Opportunity × Campaign`
 
@@ -205,31 +186,35 @@ Grain: One row per `Learner × Opportunity × Campaign`
 
 - Derived KPIs (conversion rate, cost per conversion)
 
-## Campaign Performance Mart
-`campaign_performance_mart`
+**Screenshot:**
 
-Grain: One row per `Campaign × Date`
+![Data Flow Diagram](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Data%20Flow%20Diagram(learner_db).drawio.png)
 
-**Purpose**
+## Dashboard (Looker Studio)
 
-- Executive-level campaign reporting
-- Performance trend analysis
-- Cost and conversion efficiency tracking
+The analytics views power a multi-page Looker Studio dashboard.
 
-## Marketing Funnel
-`marketing funnel`
+**Dashboard Highlights**
 
-**Purpose**
+- **Executive KPIs**
+ - Total Spend
+ - Total Conversions
+ - Avg Cost per Conversion
+ - Marketing Attribution %
 
-- Represents funnel stages and values for dashboarding
-- Enables visualization of:
-  - Reach
-  - Clicks
-  - Results (conversions)
+- **Trends**
+ - Spend vs Results over time
+ - Conversion rate trends
+ 
+- **Campaign Analysis**
+ - Cost per result by campaign
+ - Conversion rate by campaign
+ - Spend vs results by campaign type
 
-Due to Looker Studio limitations, funnel stages are modeled using structured metrics rather than a single multi-metric funnel object.
+- **Funnel Analysis**
+ - Reach → Clicks → Conversions
+ - Modeled using separate charts due to Looker limitations
 
----
 
 ## Data Quality & Auditing
 
@@ -240,30 +225,14 @@ Quality checks are applied consistently across layers:
 - Campaign ↔ opportunity matching flags
 - Cost and result sanity checks
 
-Only validated data is promoted forward at each layer.
-
----
-
-## Dashboarding (Looker Studio)
-
-- Connected via Google Sheets/ CSV export
-
-- Numeric fields explicitly cast for BI compatibility
-- Metrics pre-aggregated where required
-- Funnel visualizations implemented using multiple charts
-
----
+Only validated records are promoted to analytics views.
 
 ## Technologies Used
 
 - PostgreSQL
-
 - SQL (CTEs, window functions, regex, deduplication logic)
-
 - Looker Studio
-
 - CSV ingestion
-
 - GitHub
 
 ---
@@ -279,6 +248,7 @@ Only validated data is promoted forward at each layer.
 │   ├── scripts.sql
 │   ├── data_flow_diagram.png
 │   ├── layered_architecture.png
+|   ├── dashboard.pdf
 │   ├── data_dictionary_fix_and_clean.md
 │   ├── data_dictionary_business_layer.md
 │   └── sql_queries.sql
@@ -289,7 +259,7 @@ Only validated data is promoted forward at each layer.
 ---
 ## Author
 
-Built as an end-to-end analytics engineering project demonstrating:
+Built as an end-to-end real world analytics engineering project demonstrating:
 
 - Data modeling and warehouse design
 
