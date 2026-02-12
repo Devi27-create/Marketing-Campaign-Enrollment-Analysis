@@ -74,21 +74,26 @@ Validated learner enrollment records.
 | `quality_flag`    | TEXT      | Enrollment data quality indicator |
 
 
-**4️⃣ cohort_fix**
+**4️⃣ cognito_fix**
 
 Cohort lifecycle and size metadata.
 
-| Column Name       | Data Type | Description                       |
-| ----------------- | --------- | --------------------------------- |
-| `learner_id`      | TEXT      | Learner identifier                |
-| `opportunity_id`  | TEXT      | Opportunity identifier            |
-| `assigned_cohort` | TEXT      | Cohort assigned to learner        |
-| `apply_date`      | TIMESTAMP | Application date                  |
-| `status`          | TEXT      | Enrollment status                 |
-| `quality_flag`    | TEXT      | Enrollment data quality indicator |
+| Column Name               | Data Type | Description                |
+| ------------------------- | --------- | -------------------------- |
+| `learner_id`              | TEXT      | Cognito user ID            |
+| `email`                   | TEXT      | User email address         |
+| `gender`                  | TEXT      | Gender (normalized)        |
+| `user_create_date`        | TIMESTAMP | Account creation timestamp |
+| `user_last_modified_date` | TIMESTAMP | Last profile update        |
+| `birthdate`               | DATE      | Date of birth              |
+| `city`                    | TEXT      | City of residence          |
+| `state`                   | TEXT      | State of residence         |
+| `zip`                     | TEXT      | Zip / postal code          |
+| `age`                     | INTEGER   | Derived age                |
+| `quality_flag`            | TEXT      | Data validation flag       |
 
 
-**5️⃣ cognito_fix**
+**5️⃣ cohort_fix**
 
 Deduplicated learner authentication and demographic data.
 
@@ -128,6 +133,18 @@ Cleaned and enriched marketing campaign performance data.
 | `marketing_objective`     | TEXT      | Objective (Awareness, Leads, Reach, etc.)     |
 | `performance_flag`        | TEXT      | Performance quality indicator                 |
 
+**Audit & Quality Flags (Conceptual)**
+
+Used across tables to track data reliability.
+
+| Flag                  | Meaning                           |
+| --------------------- | --------------------------------- |
+| `valid`               | Record meets all quality checks   |
+| `incomplete_profile`  | Missing key learner attributes    |
+| `missing_date`        | Required date field missing       |
+| `invalid_placeholder` | Placeholder IDs detected          |
+| `high_cost`           | Cost per result exceeds threshold |
+| `no_results`          | Campaign produced zero results    |
 
 
 ---
