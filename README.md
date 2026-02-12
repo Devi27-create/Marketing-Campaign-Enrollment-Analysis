@@ -254,8 +254,7 @@ Only validated records are promoted to analytics views.
 │   ├── layered_architecture.png
 |   ├── dashboard.pdf
 │   ├── data_dictionary_fix_and_clean.md
-│   ├── data_dictionary_business_layer.md
-│   └── sql_queries.sql
+│   └── data_dictionary_business_layer.md
 ├── dashboards/
 │   └── looker_wireframe.pdf
 └── README.md
