@@ -3,8 +3,7 @@
 Stored Procedure: learner_db_clean_dataset
 ============================================================================================================================
 Purpose:
-    Builds and refreshes clean-layer tables by integrating and standardizing data
-    from fixed-layer sources.
+    Builds and refreshes clean-layer tables by integrating and standardizing data from fixed-layer sources.
 
 Clean Layer Responsibilities:
     - Join related entities across source domains
@@ -19,17 +18,13 @@ Behavior:
     - Logs execution timing for each table load
 
 Dependencies:
-    - fixed-layer tables (learner_fixed, cognito_fixed, cohort_fixed,
-      learner_opportunity_fixed, opportunity_fixed, marketing_fixed)
+    - fixed-layer tables (learner_fixed, cognito_fixed, cohort_fixed, learner_opportunity_fixed, opportunity_fixed, marketing_fixed)
 
 Execution Notes:
     - This procedure is non-incremental and idempotent
     - Intended to be run after fixed-layer refresh completes
 ============================================================================================================================
 */
-
-
------->> CLEAN DATA SCRIPT <<------
 
 CREATE OR REPLACE PROCEDURE learner_db_clean_dataset()
 LANGUAGE plpgsql
