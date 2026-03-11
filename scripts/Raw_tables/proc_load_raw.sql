@@ -53,7 +53,7 @@ BEGIN
     -----------------------------
 
     COPY opportunity_raw
-	  FROM 'data/Opportunity_Raw_Data.csv'
+	  FROM '/data/Opportunity_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
@@ -89,7 +89,7 @@ BEGIN
     ------------------------
 
     COPY cohort_raw
-	  FROM 'data/Cohort_Raw_Data.csv'
+	  FROM '/data/Cohort_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
@@ -132,7 +132,7 @@ BEGIN
     ---------------------------
 
     COPY marketing_raw
-	  FROM 'data/Marketing_Campaign_Raw_Data.csv'
+	  FROM '/data/Marketing_Campaign_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
@@ -167,7 +167,7 @@ BEGIN
     -------------------------
 
     COPY learner_raw
-	  FROM 'data/Learner_Raw_Data.csv'
+	  FROM '/data/Learner_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
@@ -202,7 +202,7 @@ BEGIN
     -------------------------------------
 
     COPY learner_opportunity_raw
-	  FROM 'data/Learner_Opportunity_Raw_Data.csv'
+	  FROM '/data/Learner_Opportunity_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
@@ -241,7 +241,7 @@ BEGIN
     -------------------------
 
     COPY cognito_raw
-	  FROM 'data/Cognito_Raw_Data.csv'
+	  FROM '/data/Cognito_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
