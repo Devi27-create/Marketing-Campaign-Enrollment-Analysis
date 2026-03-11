@@ -14,7 +14,7 @@ Parameter:
 	This stores procedure does note accept any parameters or return any values.
 
 Usage Example:
-	EXEC Learner_DB_Fixed_Dataset;
+	CALL Learner_DB_Fixed_Dataset;
 ============================================================================================================================
 */
 
