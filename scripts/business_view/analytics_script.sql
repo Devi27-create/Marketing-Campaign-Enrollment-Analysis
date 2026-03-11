@@ -1,3 +1,22 @@
+/*
+============================================================================================================================
+DDL Script: Create Business Layer Tables
+============================================================================================================================
+Purpose:
+    The business layer provides analytics-ready datasets derived from the clean layer.
+    It applies business rules, aggregations, and calculations to support reporting,
+    dashboards, and data-driven decision making.
+
+Responsibilities:
+    - Aggregate transactional data into meaningful business metrics
+    - Apply business rules and derived calculations
+    - Provide simplified datasets optimized for reporting and BI tools
+
+Data Flow:
+    Raw Layer  →  Fixed Layer →  Clean Layer  →  Business Layer
+============================================================================================================================
+*/
+
 DROP VIEW IF EXISTS master_marketing_and_enrollment;
 
 CREATE VIEW master_marketing_and_enrollment AS
