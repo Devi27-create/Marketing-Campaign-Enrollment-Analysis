@@ -13,7 +13,7 @@ Parameters:
   This stored procedure does not accept any parameters or return any values.
 
 Usage Example:
-  EXEC learner_db_raw_dataset;
+  CALL learner_db_raw_dataset;
 ==============================================================================================
 */
 
@@ -53,9 +53,10 @@ BEGIN
     -----------------------------
 
     COPY opportunity_raw
-	  FROM 'C:\Users\user\OneDrive\Desktop\datasets\learner dataset\Opportunity_Raw_Data.csv'
+	  FROM 'data/Opportunity_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
+
 
     end_time := clock_timestamp();
     RAISE NOTICE 'opportunity_raw table loaded. Time taken: % seconds', EXTRACT(EPOCH FROM end_time - start_time);
@@ -88,7 +89,7 @@ BEGIN
     ------------------------
 
     COPY cohort_raw
-	  FROM 'C:\Users\user\OneDrive\Desktop\datasets\learner dataset\Cohort_Raw_Data.csv'
+	  FROM 'data/Cohort_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
@@ -131,7 +132,7 @@ BEGIN
     ---------------------------
 
     COPY marketing_raw
-	  FROM 'C:\Users\user\OneDrive\Desktop\datasets\learner dataset\Marketing_Campaign_Raw_Data.csv'
+	  FROM 'data/Marketing_Campaign_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
@@ -166,7 +167,7 @@ BEGIN
     -------------------------
 
     COPY learner_raw
-	  FROM "C:\Users\user\OneDrive\Desktop\datasets\learner dataset\Learner_Raw_Data.csv"
+	  FROM 'data/Learner_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
@@ -201,7 +202,7 @@ BEGIN
     -------------------------------------
 
     COPY learner_opportunity_raw
-	  FROM 'C:\Users\user\OneDrive\Desktop\datasets\learner dataset\Learner_Opportunity_Raw_Data.csv'
+	  FROM 'data/Learner_Opportunity_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
@@ -240,7 +241,7 @@ BEGIN
     -------------------------
 
     COPY cognito_raw
-	  FROM 'C:\Users\user\OneDrive\Desktop\datasets\learner dataset\Cognito_Raw_Data.csv'
+	  FROM 'data/Cognito_Raw_Data.csv'
 	  DELIMITER ','
 	  CSV HEADER;
 
