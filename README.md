@@ -244,21 +244,36 @@ Only validated records are promoted to analytics views.
 
 ## Repository Structure
 
-├── sql/
-│   ├── raw/
-│   ├── fixed/
-│   ├── clean/
-│   └── business/
-├── docs/
-│   ├── scripts.sql
-│   ├── data_flow_diagram.png
-│   ├── layered_architecture.png
-|   ├── dashboard.pdf
-│   ├── data_dictionary_fix_and_clean.md
-│   └── data_dictionary_business_layer.md
-├── dashboards/
-│   └── looker_wireframe.pdf
-└── README.md
+Marketing_Campaign_&_Enrollment_Analytics/
+│
+├── Dashboard/
+│   ├── Page_1.png
+│   ├── Page_2.png
+│   ├── Page_3.png
+│
+├── Diagrams/
+│   ├── Data_Flow_Diagram.png
+│   ├── Data_Warehouse_Architecture.png
+│
+├── Documentation/
+│   ├── Data_Dictionary_Business_Layer.md
+│   ├── Data_Dictionary_Fix_Clean.md
+|
+├── datasets/
+│   ├── Cognito_Raw.csv
+│   ├── CohortRaw.csv
+│   ├── Learner_Opportunity.csv
+│   ├── Learner_Raw.csv
+│   ├── Marketing_Campaign_Data.csv
+│   ├── Opportunity_Dataset.csv
+│
+├── scripts/
+│   ├── Raw_tables/
+│   ├── Clean_tables/
+│   ├── Fix_tables/
+│   ├── business_view/
+│
+├── README.md
 
 ---
 ## Author
