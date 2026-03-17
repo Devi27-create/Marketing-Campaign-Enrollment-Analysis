@@ -217,8 +217,9 @@ The analytics views power a multi-page Looker Studio dashboard.
 
 **Screenshot:**
 
-![Dashboard](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/marketing_campaign_%26_enrollment_analysis.pdf)
-
+![Dashboard](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Dashboard/Page%201.png)
+![Dashboard](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Dashboard/Page%202.png)
+![Dashboard](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Dashboard/Page%203.png)
 
 ## Data Quality & Auditing
 
