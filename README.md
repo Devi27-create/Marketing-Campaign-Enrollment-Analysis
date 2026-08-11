@@ -200,23 +200,23 @@ The analytics views power a multi-page Looker Studio dashboard.
 **Dashboard Highlights**
 
 - **Executive KPIs**
- - Total Spend
- - Total Conversions
- - Avg Cost per Conversion
- - Marketing Attribution %
+  - Total Spend
+  - Total Conversions
+  - Avg Cost per Conversion
+  - Marketing Attribution %
 
 - **Trends**
- - Spend vs Results over time
- - Conversion rate trends
+  - Spend vs Results over time
+  - Conversion rate trends
  
 - **Campaign Analysis**
- - Cost per result by campaign
- - Conversion rate by campaign
- - Spend vs results by campaign type
+  - Cost per result by campaign
+  - Conversion rate by campaign
+  - Spend vs results by campaign type
 
 - **Funnel Analysis**
- - Reach → Clicks → Conversions
- - Modeled using separate charts due to Looker limitations
+  - Reach → Clicks → Conversions
+  - Modeled using separate charts due to Looker limitations
 
 **Screenshot:**
 
