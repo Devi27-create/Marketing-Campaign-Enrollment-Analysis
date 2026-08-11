@@ -218,7 +218,7 @@ The analytics views power a multi-page Looker Studio dashboard.
   - Reach → Clicks → Conversions
   - Modeled using separate charts due to Looker limitations
 
-**Screenshot:**
+- **Screenshot:**
 
 ![Dashboard](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Dashboard/Page%201.png)
 ![Dashboard](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Dashboard/Page%202.png)
