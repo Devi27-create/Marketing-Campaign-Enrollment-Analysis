@@ -8,6 +8,7 @@ Raw operational data is transformed through a layered data warehouse architectur
 
 The project demonstrates real-world analytics engineering practices including data modeling, quality enforcement, auditability, and BI-friendly design.
 
+---
 
 ## Business Use Cases
 
@@ -21,6 +22,7 @@ The project demonstrates real-world analytics engineering practices including da
 
 - Enable executive and analytical reporting in Looker Studio
 
+---
 
 ## Layered Data Warehouse Architecture
 
@@ -53,6 +55,7 @@ This project follows a four-layer warehouse design to ensure data quality, scala
 
 ![Layered Architecture](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Layered%20Data%20Warehouse%20Architecture%20(Raw%20%E2%86%92%20Fixed%20%E2%86%92%20Clean%20%E2%86%92%20Final)%20(Learner%20Dataset).drawio.png)
 
+---
 
 ## 🔹 Data Flow Overview
 
@@ -64,6 +67,8 @@ Each dataset is independently validated and standardized before being joined, pr
 - Quality flags applied before composition
 - Business logic isolated from transformation logic
 - BI tools consume views only, never transformation tables
+
+---
 
 ## Source Datasets
 
@@ -78,6 +83,8 @@ Each dataset is independently validated and standardized before being joined, pr
 - **Cognito:** user identity and profile data
 
 - **Marketing Campaign:** campaign performance metrics
+
+---
 
 ## Layer Breakdown
 
@@ -190,6 +197,8 @@ Grain: One row per `Learner × Opportunity × Campaign`
 
 ![Data Flow Diagram](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Data%20Flow%20Diagram(learner_db).drawio.png)
 
+---
+
 ## Dashboard (Looker Studio)
 
 The analytics views power a multi-page Looker Studio dashboard.
@@ -221,6 +230,8 @@ The analytics views power a multi-page Looker Studio dashboard.
 ![Dashboard](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Dashboard/Page%202.png)
 ![Dashboard](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Dashboard/Page%203.png)
 
+---
+
 ## Data Quality & Auditing
 
 Quality checks are applied consistently across layers: 
@@ -231,6 +242,8 @@ Quality checks are applied consistently across layers:
 - Cost and result sanity checks
 
 Only validated records are promoted to analytics views.
+
+---
 
 ## Technologies Used
 
@@ -244,6 +257,7 @@ Only validated records are promoted to analytics views.
 
 ## Repository Structure
 
+```text
 Marketing_Campaign_&_Enrollment_Analytics/
 │
 ├── Dashboard/
@@ -274,9 +288,15 @@ Marketing_Campaign_&_Enrollment_Analytics/
 │   ├── business_view/
 │
 ├── README.md
+```
 
 ---
 ## Author
+
+**[Devi Smita]**
+
+Data Analytics Project
+PostgreSQL | SQL | Looker Studio 
 
 Built as an end-to-end real world analytics engineering project demonstrating:
 
