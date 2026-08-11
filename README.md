@@ -8,8 +8,6 @@ Raw operational data is transformed through a layered data warehouse architectur
 
 The project demonstrates real-world analytics engineering practices including data modeling, quality enforcement, auditability, and BI-friendly design.
 
----
-
 ## Business Use Cases
 
 - Measure marketing effectiveness from reach → conversions
