@@ -53,8 +53,6 @@ This project follows a four-layer warehouse design to ensure data quality, scala
 
 ![Layered Architecture](https://github.com/Devi27-create/Marketing-Campaign-Enrollment-Analysis/blob/main/Diagrams/Layered%20Data%20Warehouse%20Architecture%20(Raw%20%E2%86%92%20Fixed%20%E2%86%92%20Clean%20%E2%86%92%20Final)%20(Learner%20Dataset).drawio.png)
 
----
-
 ## 🔹 Data Flow Overview
 
 Each dataset is independently validated and standardized before being joined, preventing data contamination and double counting.
@@ -65,8 +63,6 @@ Each dataset is independently validated and standardized before being joined, pr
 - Quality flags applied before composition
 - Business logic isolated from transformation logic
 - BI tools consume views only, never transformation tables
-
----
 
 ## Source Datasets
 
