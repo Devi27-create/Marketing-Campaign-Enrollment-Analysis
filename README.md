@@ -28,7 +28,7 @@ This project follows a four-layer warehouse design to ensure data quality, scala
 
 ### 🔹 Architecture Diagram
 
-Raw → Fixed → Clean → Business → Consumption
+`Raw → Fixed → Clean → Business → Consumption`
 
 **Architecture Summary**
 
